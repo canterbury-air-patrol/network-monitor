@@ -18,7 +18,12 @@ body {
 
 #nodes {
     height: 100%;
-    width: 20%;
+    padding: 5px;
+}
+
+.node {
+    padding: 3px;
+    font-size: large;
 }
 
 #node-data {
@@ -29,4 +34,8 @@ body {
 #node-interfaces {
     height: 100%;
     background-color: red;
+}
+
+.node-selected {
+    background-color: green;
 }
