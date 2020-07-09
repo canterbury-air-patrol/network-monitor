@@ -19,6 +19,47 @@ def nodes_list(request):
     return HttpResponse(data, content_type='application/json')
 
 
+def node_interfaces(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    data = serializers.serialize('json', NodeInterface.objects.filter(node=node))
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_addresses(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    data = serializers.serialize('json', NodeAddress.objects.filter(node=node).order_by('address_layer'))
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_snapshots(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    data = serializers.serialize('json', NodeSnapshot.objects.filter(node=node).order_by('-timestamp'))
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_routes(request, node_id, snapshot_id):
+    node = get_object_or_404(Node, pk=node_id)
+    snapshot = get_object_or_404(NodeSnapshot, pk=snapshot_id, node=node)
+    data = serializers.serialize('json', NodeRoute.objects.filter(snapshot=snapshot))
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_wireless(request, node_id, snapshot_id):
+    node = get_object_or_404(Node, pk=node_id)
+    snapshot = get_object_or_404(NodeSnapshot, pk=snapshot_id, node=node)
+    data = serializers.serialize('json', NodeWirelessNeighbour.objects.filter(snapshot=snapshot))
+    print(data)
+    return HttpResponse(data, content_type='application/json')
+
+
+def standardize_address(address):
+    if ':' in address:
+        return address.lower()
+    else:
+        # Probably IPv4, doesn't matter
+        return address
+
+
 def node_upload(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
 
@@ -49,18 +90,18 @@ def node_upload(request, node_id):
                     known_interface.save()
             if 'lladdress' in interface:
                 try:
-                    known_address = NodeAddress.objects.get(node=node, address=interface['lladdress'])
+                    known_address = NodeAddress.objects.get(node=node, address=standardize_address(interface['lladdress']))
                 except ObjectDoesNotExist:
-                    known_address = NodeAddress(node=node, address=interface['lladdress'], address_layer=2)
+                    known_address = NodeAddress(node=node, address=standardize_address(interface['lladdress']), address_layer=2)
                     known_address.save()
 
     # Add any addresses this node has
     if 'addresses' in data:
         for address in data['addresses']:
             try:
-                known_address = NodeAddress.objects.get(node=node, address=address['address'])
+                known_address = NodeAddress.objects.get(node=node, address=standardize_address(address['address']))
             except ObjectDoesNotExist:
-                known_address = NodeAddress(node=node, address=address['address'], address_layer=3)
+                known_address = NodeAddress(node=node, address=standardize_address(address['address']), address_layer=3)
                 known_address.save()
 
     # Add any routes
@@ -68,7 +109,7 @@ def node_upload(request, node_id):
         for route in data['routes']:
             if 'destination' in route and 'nexthop' in route:
                 try:
-                    nexthop = NodeAddress.objects.get(address=route['nexthop'])
+                    nexthop = NodeAddress.objects.get(address=standardize_address(route['nexthop']))
                 except ObjectDoesNotExist:
                     nexthop = None
                 if nexthop is not None:
@@ -84,11 +125,11 @@ def node_upload(request, node_id):
                 except ObjectDoesNotExist:
                     interface = None
                 try:
-                    other_if = NodeAddress.objects.get(address=neighbour['address'])
+                    other_if = NodeAddress.objects.get(address=standardize_address(neighbour['address']))
                 except ObjectDoesNotExist:
                     other_if = None
                 if other_if is not None and interface is not None:
-                    wirelessneighbour = NodeWirelessNeighbour(snapshot=snapshot, interface=interface, neighbour_address=other_if, signal_strength=neighbour[strength])
+                    wirelessneighbour = NodeWirelessNeighbour(snapshot=snapshot, interface=interface, neighbour_address=other_if, signal_strength=neighbour['strength'])
                     wirelessneighbour.save()
 
     return HttpResponse("Success")

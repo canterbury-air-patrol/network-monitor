@@ -36,6 +36,16 @@ body {
     background-color: red;
 }
 
+#node-addresses {
+    height: 100%;
+    overflow: scroll;
+}
+
+#node-snapshots {
+    height: 100%;
+    overflow: scroll;
+}
+
 .node-selected {
     background-color: green;
 }
