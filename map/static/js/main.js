@@ -103,10 +103,19 @@ function UISnapShotSelected(node_id, snapshot_id)
 function UILoadSnapShots(node)
 {
     $.get(node.getURL('snapshots/list/'), (data) => {
+        $('#node-snapshots').html('');
+        var found = false;
         for (n in data) {
-            $('#node-snapshots').append(`<div id='snapshot-${data[n].pk}' class='node-snapshot' onclick='UISnapShotSelected(${node.pk},${data[n].pk})'>${data[n].fields.timestamp}</div>`);
+            var selected_class = '';
+            if (selected_snapshot === data[n].pk) {
+                selected_class = 'snapshot-selected';
+                found = true;
+            }
+            $('#node-snapshots').append(`<div id='snapshot-${data[n].pk}' class='node-snapshot ${selected_class}' onclick='UISnapShotSelected(${node.pk},${data[n].pk})'>${data[n].fields.timestamp}</div>`);
         }
-        UISnapShotSelected(node.pk, 0);
+        if (!found) {
+            UISnapShotSelected(node.pk, 0);
+        }
     });
 }
 
@@ -148,6 +157,10 @@ function updateNodes()
             }
         }
     });
+    if (selected_node !== 0)
+    {
+        UILoadNodeData(nodeFind(selected_node));
+    }
 }
 
 function loaded()
@@ -160,4 +173,5 @@ function loaded()
     }).addTo(mymap);
 
     updateNodes();
+    setInterval(updateNodes, 10000);
 }

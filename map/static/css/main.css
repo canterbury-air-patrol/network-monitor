@@ -49,3 +49,7 @@ body {
 .node-selected {
     background-color: green;
 }
+
+.snapshot-selected {
+    background-color: green;
+}

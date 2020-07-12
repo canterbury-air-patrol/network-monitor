@@ -7,6 +7,9 @@ class Node(models.Model):
     def __str__(self):
         return self.name
 
+    def natural_key(self):
+        return self.name
+
 
 class NodeAddress(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
@@ -19,6 +22,9 @@ class NodeAddress(models.Model):
     def __str__(self):
         return '{} on {}'.format(self.address, self.node)
 
+    def natural_key(self):
+        return self.address
+
 
 class NodeInterface(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
@@ -26,6 +32,9 @@ class NodeInterface(models.Model):
 
     def __str__(self):
         return '{} on {}'.format(self.ifname, self.node)
+
+    def natural_key(self):
+        return self.__str__()
 
 
 class NodeSnapshot(models.Model):
@@ -35,6 +44,9 @@ class NodeSnapshot(models.Model):
 
     def __str__(self):
         return '{} status @ {}'.format(self.node, self.timestamp)
+
+    def natural_key(self):
+        return self.timestamp
 
 
 class NodeWirelessNeighbour(models.Model):

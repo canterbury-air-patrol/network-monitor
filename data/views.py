@@ -21,34 +21,33 @@ def nodes_list(request):
 
 def node_interfaces(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
-    data = serializers.serialize('json', NodeInterface.objects.filter(node=node))
+    data = serializers.serialize('json', NodeInterface.objects.filter(node=node), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
 def node_addresses(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
-    data = serializers.serialize('json', NodeAddress.objects.filter(node=node).order_by('address_layer'))
+    data = serializers.serialize('json', NodeAddress.objects.filter(node=node).order_by('address_layer'), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
 def node_snapshots(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
-    data = serializers.serialize('json', NodeSnapshot.objects.filter(node=node).order_by('-timestamp'))
+    data = serializers.serialize('json', NodeSnapshot.objects.filter(node=node).order_by('-timestamp'), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
 def node_routes(request, node_id, snapshot_id):
     node = get_object_or_404(Node, pk=node_id)
     snapshot = get_object_or_404(NodeSnapshot, pk=snapshot_id, node=node)
-    data = serializers.serialize('json', NodeRoute.objects.filter(snapshot=snapshot))
+    data = serializers.serialize('json', NodeRoute.objects.filter(snapshot=snapshot), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
 def node_wireless(request, node_id, snapshot_id):
     node = get_object_or_404(Node, pk=node_id)
     snapshot = get_object_or_404(NodeSnapshot, pk=snapshot_id, node=node)
-    data = serializers.serialize('json', NodeWirelessNeighbour.objects.filter(snapshot=snapshot))
-    print(data)
+    data = serializers.serialize('json', NodeWirelessNeighbour.objects.filter(snapshot=snapshot), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
