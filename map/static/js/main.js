@@ -50,6 +50,7 @@ function UIClearNodeData()
 function UILoadNodeInterfaces(node)
 {
     $.get(node.getURL('interfaces/list/'), (data) => {
+        $('#node-interfaces').html('');
         for (n in data) {
             $('#node-interfaces').append(`<div class='node-interface'>${data[n].fields.ifname}</div>`);
         }
@@ -59,6 +60,7 @@ function UILoadNodeInterfaces(node)
 function UILoadNodeAddresses(node)
 {
     $.get(node.getURL('addresses/list/'), (data) => {
+        $('#node-addresses').html('');
         for (n in data) {
             $('#node-addresses').append(`<div class='node-address'>${data[n].fields.address}</div>`);
         }
@@ -163,6 +165,16 @@ function updateNodes()
     }
 }
 
+var nodeUpdateFreq = 10000;
+
+function nodeUpdate(node, oldLayer) {
+    var nodeName = node.properties.node;
+}
+
+function nodeCreate(node) {
+    var nodeName = node.properties.node;
+}
+
 function loaded()
 {
     var mymap = L.map('map').setView([-43.5, 172.5], 13);
@@ -174,4 +186,21 @@ function loaded()
 
     updateNodes();
     setInterval(updateNodes, 10000);
+
+
+    var layerControl;
+    layerControl = L.control.layers({}, {});
+    layerControl.addTo(mymap);
+
+    var realtime = L.realtime({
+        url: '/data/nodes/position/latest/',
+        type: 'json',
+    }, {
+        interval: nodeUpdateFreq,
+        onEachFeature: nodeCreate,
+        updateFeature: nodeUpdate,
+        getFeatureId: function(feature) { return feature.properties.node; }
+    }).addTo(mymap);
+
+    layerControl.addOverlay(realtime, 'Nodes');
 }

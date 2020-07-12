@@ -42,6 +42,9 @@ class NodeSnapshot(models.Model):
     timestamp = models.DateTimeField()
     position = models.PointField(geography=True)
 
+    GEOFIELD = 'position'
+    GEOJSON_FIELDS = ('node', 'timestamp', )
+
     def __str__(self):
         return '{} status @ {}'.format(self.node, self.timestamp)
 

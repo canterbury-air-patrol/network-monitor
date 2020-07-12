@@ -19,6 +19,20 @@ def nodes_list(request):
     return HttpResponse(data, content_type='application/json')
 
 
+def nodes_positions(request):
+    nodes = Node.objects.all()
+    positions = []
+    for node in nodes:
+        try:
+            snapshot = NodeSnapshot.objects.filter(node=node).order_by('-timestamp')[0]
+            positions.append(snapshot)
+        except:
+            pass
+    geojson_data = serializers.serialize('geojson', positions, geometry_field=NodeSnapshot.GEOFIELD,
+                             fields=NodeSnapshot.GEOJSON_FIELDS, use_natural_foreign_keys=True)
+    return HttpResponse(geojson_data, content_type='application/geo+json')
+
+
 def node_interfaces(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
     data = serializers.serialize('json', NodeInterface.objects.filter(node=node), use_natural_foreign_keys=True)
@@ -34,6 +48,26 @@ def node_addresses(request, node_id):
 def node_snapshots(request, node_id):
     node = get_object_or_404(Node, pk=node_id)
     data = serializers.serialize('json', NodeSnapshot.objects.filter(node=node).order_by('-timestamp'), use_natural_foreign_keys=True)
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_latest_routes(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    try:
+        snapshot = NodeSnapshot.objects.filter(node=node).order_by('-timestamp')[0]
+    except:
+        return HttpResponseNotFound('No snapshot')
+    data = serializers.serialize('json', NodeRoute.objects.filter(snapshot=snapshot), use_natural_foreign_keys=True)
+    return HttpResponse(data, content_type='application/json')
+
+
+def node_latest_wireless(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    try:
+        snapshot = NodeSnapshot.objects.filter(node=node).order_by('-timestamp')[0]
+    except:
+        return HttpResponseNotFound('No snapshot')
+    data = serializers.serialize('json', NodeWirelessNeighbour.objects.filter(snapshot=snapshot), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
 
@@ -72,7 +106,7 @@ def node_upload(request, node_id):
         lon = float(data['longitude'])
         lat = float(data['latitude'])
 
-        snapshot = NodeSnapshot(node=node, timestamp=timezone.now(), position=Point(lat, lon))
+        snapshot = NodeSnapshot(node=node, timestamp=timezone.now(), position=Point(lon, lat))
         snapshot.save()
     except:
         print(e)
