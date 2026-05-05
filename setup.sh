@@ -19,6 +19,14 @@ fi
 mkdir -p map/static/jquery/
 cp dl/${JQUERY_FILE} map/static/jquery/jquery.js
 
+# Fetch Leaflet heatmap
+LEAFLET_HEAT_FILE=leaflet-heat.min.js
+if [ ! -f dl/${LEAFLET_HEAT_FILE} ]
+then
+	curl -L https://raw.githubusercontent.com/Leaflet/Leaflet.heat/gh-pages/dist/leaflet-heat.js -o dl/${LEAFLET_HEAT_FILE}
+fi
+mkdir -p map/static/leaflet/
+cp dl/${LEAFLET_HEAT_FILE} map/static/leaflet/leaflet-heat.js
 
 # Create the local settings file from the template
 if [ ! -f networkmonitor/local_settings.py ]

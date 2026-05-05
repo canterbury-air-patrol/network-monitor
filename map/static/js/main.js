@@ -1,4 +1,5 @@
 var known_nodes = [];
+var heat_map = null;
 
 class NetworkNode {
     constructor(pk, name) {
@@ -16,6 +17,20 @@ class NetworkNode {
         } else {
             return `/data/nodes/${this.pk}/snapshots/${snapshot_id}/${path}`;
         }
+    }
+}
+
+class UIHeatMap {
+    constructor(map) {
+        this.map = map;
+        this.data = [];
+        this.heat = L.heatLayer(this.data, {radius: 25, max: 100}).addTo(map);
+    }
+
+    setData(data) {
+        self.data = data;
+        this.heat.setLatLngs(self.data);
+        //this.heat.redraw();
     }
 }
 
@@ -121,12 +136,19 @@ function UILoadSnapShots(node)
     });
 }
 
+function UILoadWirelessViews(node)
+{
+    $.get(node.getURL('wireless/neighbours/opinion/list/'), (data) => {
+        heat_map.setData(data['views']);
+    })
+}
 
 function UILoadNodeData(node)
 {
     UILoadNodeInterfaces(node);
     UILoadNodeAddresses(node);
     UILoadSnapShots(node);
+    UILoadWirelessViews(node);
 }
 
 var selected_node = 0;
@@ -203,4 +225,6 @@ function loaded()
     }).addTo(mymap);
 
     layerControl.addOverlay(realtime, 'Nodes');
+
+    heat_map = new UIHeatMap(mymap);
 }

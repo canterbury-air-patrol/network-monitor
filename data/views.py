@@ -84,6 +84,14 @@ def node_wireless(request, node_id, snapshot_id):
     data = serializers.serialize('json', NodeWirelessNeighbour.objects.filter(snapshot=snapshot), use_natural_foreign_keys=True)
     return HttpResponse(data, content_type='application/json')
 
+def node_get_neighbour_views(request, node_id):
+    node = get_object_or_404(Node, pk=node_id)
+    data = NodeWirelessNeighbour.objects.filter(neighbour_address__node=node)
+    results = []
+    for wireless in data:
+        results.append({'lat': wireless.snapshot.position[1], 'lng': wireless.snapshot.position[0], 'strength': wireless.signal_strength})
+    return JsonResponse({'views': results})
+
 
 def standardize_address(address):
     if ':' in address:

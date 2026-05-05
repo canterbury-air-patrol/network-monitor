@@ -15,4 +15,5 @@ urlpatterns = [
     url(r'^nodes/(?P<node_id>\d+)/snapshots/latest/wireless/list/$', views.node_latest_wireless, name='node_latest_wireless'),
     url(r'^nodes/(?P<node_id>\d+)/snapshots/(?P<snapshot_id>\d+)/routes/list/$', views.node_routes, name='node_routes'),
     url(r'^nodes/(?P<node_id>\d+)/snapshots/(?P<snapshot_id>\d+)/wireless/list/$', views.node_wireless, name='node_wireless'),
+    url(r'^nodes/(?P<node_id>\d+)/wireless/neighbours/opinion/list/$', views.node_get_neighbour_views, name='node_get_wireless_views'),
 ]
