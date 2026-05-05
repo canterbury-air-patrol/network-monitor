@@ -5,3 +5,4 @@ __pycache__/
 /static/
 networkmonitor/local_settings.py
 networkmonitor/secretkey.txt
+todo/
