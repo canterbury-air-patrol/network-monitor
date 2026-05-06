@@ -6,7 +6,8 @@ This document outlines the foundational mandates for development on the Network 
 Operate using a **Research -> Strategy -> Execution** lifecycle.
 - **Research:** Always validate assumptions about the current codebase or environment before suggesting changes.
 - **Strategy:** Provide a concise summary of the proposed approach for complex tasks.
-- **Execution:** Resolve sub-tasks through an iterative **Plan -> Act -> Validate** cycle.
+- **Execution:** Resolve sub-tasks through an iterative **Plan -> Act -> Validate -> Review** cycle.
+    - **Review:** Before finalization, invoke a separate sub-agent (e.g., `codebase_investigator`) to review the changes for architectural alignment, security, and adherence to these standards.
 
 ## 2. Testing Standards (Mandatory)
 A task is not complete until its behavioral correctness is verified.

@@ -11,7 +11,8 @@ This project follows strict engineering standards to ensure reliability for UAV 
     *   **Frontend:** Always use `./build-frontend.sh` for `npm`/`node` tasks.
 2.  **Parallel Environments:** The development server (`docker-compose up`) and the test suite must be able to run concurrently.
 3.  **Testing:** 100% test coverage is required for all new logic. Use `pytest` and `factory-boy`.
-4.  **Standards:** Adhere to [AGENTS.md](./AGENTS.md) for detailed architectural and quality standards.
+4.  **Sub-Agent Review:** Every code change MUST be reviewed by a separate agent (e.g., `codebase_investigator`) before being considered complete.
+5.  **Standards:** Adhere to [AGENTS.md](./AGENTS.md) for detailed architectural and quality standards.
 
 ## Useful Commands
 
