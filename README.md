@@ -39,7 +39,7 @@ This project adheres to strict engineering mandates defined in [AGENTS.md](./AGE
 1.  **Initialize Environment:** `cp networkmonitor/local_settings.py.template networkmonitor/local_settings.py`
 2.  **Start Services:** `docker-compose up -d`
 3.  **Build Frontend:** `./build-frontend.sh`
-4.  **Run Tests:** `pytest` (Backend) | `npm test` (Frontend)
+4.  **Run Tests:** `docker-compose run --rm test` (Backend) | `./build-frontend.sh` (Frontend)
 
 ---
 *Maintained for mission-critical flight monitoring reliability.*

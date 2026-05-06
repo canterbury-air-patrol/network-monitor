@@ -1,6 +1,7 @@
 django
 psycopg2-binary
-
 django-leaflet
-
 pylint
+pytest
+pytest-django
+factory-boy

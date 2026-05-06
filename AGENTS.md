@@ -31,6 +31,7 @@ A task is not complete until its behavioral correctness is verified.
 - **No Staging:** Do not stage or commit changes unless explicitly requested by the user.
 
 ## 5. Tooling & Environment
+- **Dockerized Backend:** Always run Python and `manage.py` commands inside a Docker container (e.g., using `docker-compose exec app ...`). The development environment and tests must be able to run concurrently.
 - **Dockerized Frontend:** Always use `./build-frontend.sh` for any `npm` or `node` related tasks to ensure environmental consistency.
 - **Security First:** Never log or commit secrets, API keys, or sensitive credentials. Rigorously protect `.env` and system folders.
 
