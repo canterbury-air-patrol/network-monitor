@@ -7,19 +7,22 @@ Operate using a **Research -> Strategy -> Execution** lifecycle.
 - **Research:** Always validate assumptions about the current codebase or environment before suggesting changes.
 - **Strategy:** Provide a concise summary of the proposed approach for complex tasks.
 - **Execution:** Resolve sub-tasks through an iterative **Plan -> Act -> Validate -> Review** cycle.
-    - **Review:** Before finalization, invoke a separate sub-agent (e.g., `codebase_investigator`) to review the changes for architectural alignment, security, and adherence to these standards.
+    - **Step 1: Mark Todo:** Mark the current numbered task (e.g., `[P1-01]`) in the relevant `todo/` file as "in progress".
+    - **Step 2: Implement:** Apply surgical code changes.
+    - **Step 3: Validate:** Run Dockerized tests, linting (`ruff`/`prettier`), and type-checking (`tsc`).
+    - **Step 4: Review:** Invoke a separate sub-agent (e.g., `codebase_investigator`) to review for architectural alignment.
+    - **Step 5: Finalize:** Mark the task as completed in the `todo/` file.
 
-## 2. Testing Standards (Mandatory)
+## 2. Testing & Validation (Mandatory)
 A task is not complete until its behavioral correctness is verified.
 - **Test-First:** Add or update tests for every code change.
+- **Dockerized Validation:** All verification (tests, linting, formatting, type-checking) MUST run inside a Docker container to ensure environmental consistency.
 - **Backend:** 
     - Use `pytest` for unit and integration tests.
     - Utilize `factory-boy` for generating realistic GIS (PostGIS) data.
-    - Ensure 100% pass rate on the PostGIS-enabled test database.
 - **Frontend:**
     - Use `vitest` for component unit tests.
-    - Use **Playwright** for E2E and Visual Regression testing of map components.
-- **Validation:** Validation is the only path to finality. Never settle for unverified changes.
+    - Use **Playwright** for E2E and Visual Regression testing.
 
 ## 3. Code Quality & Formatting
 - **Python:** Adhere to PEP 8. Use `ruff` for linting and formatting. Use type hints for all new functions.
@@ -27,13 +30,13 @@ A task is not complete until its behavioral correctness is verified.
 - **Surgical Edits:** Avoid unrelated refactoring. Only change what is necessary to fulfill the task.
 
 ## 4. Source Control & Commits
-- **Atomic Commits:** Small, focused changes. One feature/fix per commit.
+- **Atomic Commits:** Every numbered todo item (e.g., `[P1-01]`) must correspond to exactly one atomic commit.
 - **Descriptive Messages:** Messages should explain "why," not just "what."
 - **No Staging:** Do not stage or commit changes unless explicitly requested by the user.
 
 ## 5. Tooling & Environment
 - **Dockerized Backend:** Always run Python and `manage.py` commands inside a Docker container (e.g., using `docker-compose exec app ...`). The development environment and tests must be able to run concurrently.
-- **Dockerized Frontend:** Always use `./build-frontend.sh` for any `npm` or `node` related tasks to ensure environmental consistency.
+- **Dockerized Frontend:** Always use `./build-frontend.sh` for any `npm` or `node` related tasks.
 - **Security First:** Never log or commit secrets, API keys, or sensitive credentials. Rigorously protect `.env` and system folders.
 
 ## 6. GIS & Real-time Specifics

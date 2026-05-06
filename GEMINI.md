@@ -1,18 +1,14 @@
 # Network Monitor Project Instructions
 
-This project follows strict engineering standards to ensure reliability for UAV monitoring.
+This project follows strict engineering standards to ensure reliability for UAV monitoring. **All development must adhere to the foundational mandates defined in [AGENTS.md](./AGENTS.md).**
 
-## Core Mandates
+## Core Mandates Summary
 
-1.  **Docker Execution:** 
-    *   **Backend:** Always run Python, `pytest`, and `manage.py` inside a Docker container.
-        *   Use `docker-compose exec app <command>` for running commands in the active dev environment.
-        *   Use `docker-compose run --rm test` for isolated test runs.
-    *   **Frontend:** Always use `./build-frontend.sh` for `npm`/`node` tasks.
-2.  **Parallel Environments:** The development server (`docker-compose up`) and the test suite must be able to run concurrently.
-3.  **Testing:** 100% test coverage is required for all new logic. Use `pytest` and `factory-boy`.
-4.  **Sub-Agent Review:** Every code change MUST be reviewed by a separate agent (e.g., `codebase_investigator`) before being considered complete.
-5.  **Standards:** Adhere to [AGENTS.md](./AGENTS.md) for detailed architectural and quality standards.
+1.  **Docker Execution:** Always run Python, `pytest`, and frontend tasks inside Docker.
+2.  **Parallel Environments:** Dev server and tests must run concurrently.
+3.  **Mandatory Review:** Every commit must be reviewed by a sub-agent.
+4.  **Atomic Commits:** One commit per numbered `todo/` item.
+5.  **Engineering Standards:** See [AGENTS.md](./AGENTS.md) for the full specification.
 
 ## Useful Commands
 
