@@ -6,3 +6,4 @@
 81. [ ] **[P10-04]** Document the Field Testing Protocol (Solar/Glove checks).
 82. [ ] **[P10-05]** Implement "Network Jitter" simulation in the dev environment.
 83. [ ] **[P10-06]** Build a dedicated Telemetry Replay tool for bug reproduction.
+84. [ ] **[P10-07]** Upgrade environment to Node.js version 26 (Scheduled for June 2026).

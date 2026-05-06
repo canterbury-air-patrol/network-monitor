@@ -36,7 +36,7 @@ A task is not complete until its behavioral correctness is verified.
 
 ## 5. Tooling & Environment
 - **Dockerized Backend:** Always run Python and `manage.py` commands inside a Docker container (e.g., using `docker-compose exec app ...`). The development environment and tests must be able to run concurrently.
-- **Dockerized Frontend:** Always use `./build-frontend.sh` for any `npm` or `node` related tasks.
+- **Dockerized Frontend:** Always use `./build-frontend.sh` (utilizing Node.js version 24) for any `npm` or `node` related tasks.
 - **Security First:** Never log or commit secrets, API keys, or sensitive credentials. Rigorously protect `.env` and system folders.
 
 ## 6. GIS & Real-time Specifics

@@ -1,6 +1,6 @@
 # Phase 2: Dockerized Frontend Setup
 
-16. [ ] **[P2-01]** Create `build-frontend.sh` script to wrap `docker run` for `npm`.
+16. [ ] **[P2-01]** Create `build-frontend.sh` script to wrap `docker run` (using `node:24`) for `npm`.
 17. [ ] **[P2-02]** Initialize Vite + React + TypeScript project in `frontend/`.
 18. [ ] **[P2-03]** Install core dependencies: `leaflet`, `react-leaflet`, `tailwindcss`.
 19. [ ] **[P2-04]** Install real-time dependencies: `socket.io-client`.
