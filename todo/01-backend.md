@@ -1,17 +1,18 @@
 # Phase 1: Backend API & WebSockets
 
-1. [ ] **[P1-01]** Update `requirements.txt` with core backend dependencies: `djangorestframework`, `django-cors-headers`, `channels`, `daphne`.
-2. [ ] **[P1-02]** Update `settings.py` with `REST_FRAMEWORK` and `CORS_ALLOWED_ORIGINS` configuration.
-3. [ ] **[P1-03]** Configure `CHANNEL_LAYERS` in `settings.py`.
-4. [ ] **[P1-04]** Set up `ASGI_APPLICATION` in `settings.py` and create `networkmonitor/asgi.py`.
-5. [ ] **[P1-05]** Configure PostGIS-enabled test database in `settings.py` for `pytest`.
-6. [ ] **[P1-06]** Create `data/serializers.py` for `Node`.
-7. [ ] **[P1-07]** Create `data/serializers.py` for `NodeSnapshot`.
-8. [ ] **[P1-08]** Create `data/serializers.py` for `NodeWirelessNeighbour`.
-9. [ ] **[P1-09]** Implement DRF ViewSets in `data/api_views.py` for Nodes and Snapshots.
-10. [ ] **[P1-10]** Implement WebSocket Consumers in `data/consumers.py`.
-11. [ ] **[P1-11]** Define WebSocket routing in `data/routing.py` and `networkmonitor/routing.py`.
-12. [ ] **[P1-12]** Write unit tests for `Node` Serializer using `factory-boy`.
-13. [ ] **[P1-13]** Write unit tests for `NodeSnapshot` Serializer.
-14. [ ] **[P1-14]** Write integration tests for Node API endpoints.
-15. [ ] **[P1-15]** Write tests for WebSocket message broadcasting and channel group isolation.
+- [ ] **[P1-01]** Pin the latest stable Django LTS and add core backend dependencies to `requirements.txt`: `djangorestframework`, `django-cors-headers`, `channels`, `daphne`.
+- [ ] **[P1-02]** Update `settings.py` with `REST_FRAMEWORK` and `CORS_ALLOWED_ORIGINS` configuration.
+- [ ] **[P1-03]** Configure `CHANNEL_LAYERS` in `settings.py`.
+- [ ] **[P1-04]** Update `networkmonitor/asgi.py` to route HTTP and WebSocket traffic through Django Channels (the file exists as a bare stub and must be extended). *(Blocks: [P1-12])*
+- [ ] **[P1-05]** Configure PostGIS-enabled test database in `settings.py` for `pytest`.
+- [ ] **[P1-06]** Update `NodeSnapshot` model to store position as a 3D geometry field (`PointField(dim=3)`) capturing longitude, latitude, and altitude. Generate migration, inspect for destructive changes, apply, and verify it is reversible. *(Blocks: [P1-08], [P1-14])*
+- [ ] **[P1-07]** Create `data/serializers.py` with serializer for `Node`.
+- [ ] **[P1-08]** Add `NodeSnapshot` serializer to `data/serializers.py`. *(Requires: [P1-06])*
+- [ ] **[P1-09]** Add `NodeWirelessNeighbour` serializer to `data/serializers.py`.
+- [ ] **[P1-10]** Implement DRF ViewSets in `data/api_views.py` for Nodes and Snapshots.
+- [ ] **[P1-11]** Implement WebSocket consumers in `data/consumers.py`.
+- [ ] **[P1-12]** Define WebSocket routing in `data/routing.py` and wire it into `networkmonitor/asgi.py`. *(Requires: [P1-04])*
+- [ ] **[P1-13]** Write unit tests for `Node` serializer using `factory-boy`.
+- [ ] **[P1-14]** Write unit tests for `NodeSnapshot` serializer; include a case asserting the altitude component survives serialization round-trip. *(Requires: [P1-06])*
+- [ ] **[P1-15]** Write integration tests for Node and Snapshot API endpoints.
+- [ ] **[P1-16]** Write tests for WebSocket message broadcasting and channel group isolation.
