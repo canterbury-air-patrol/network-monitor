@@ -10,3 +10,5 @@
 - [ ] **[P12-04]** Implement "Network Jitter" simulation in the dev environment using `tc netem` inside Docker (configurable packet loss and latency). *(Referenced by: field testing in [P13-06])*
 - [ ] **[P12-05]** Build a Telemetry Replay tool that replays a captured session from a JSON file for deterministic bug reproduction.
 - [ ] **[P12-06]** Upgrade environment to Node.js 26. *(Do not begin before Node 26 reaches LTS status — scheduled June 2026.)*
+- [ ] **[P12-07]** Add `pip-audit` to the GitHub Actions CI pipeline as a blocking gate: fail the build on any known CVE in Python dependencies. Run on every PR and on a nightly schedule against the main branch. *(Requires: [P12-01])*
+- [ ] **[P12-08]** Add `npm audit --audit-level=high` to the GitHub Actions CI pipeline as a blocking gate for high-severity JS dependency CVEs. Run on every PR. *(Requires: [P12-01])*

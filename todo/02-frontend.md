@@ -3,7 +3,7 @@
 > **Requires:** Phase 1 complete.
 
 - [ ] **[P2-01]** Create `build-frontend.sh` wrapping `docker run node:24` for `npm` commands. This script must exist before any other frontend task can run. *(Blocks: all remaining Phase 2 tasks and all subsequent frontend work)*
-- [ ] **[P2-02]** Initialize Vite + React + TypeScript project in `frontend/`. *(Requires: [P2-01])*
+- [ ] **[P2-02]** Initialize Vite + React + TypeScript project in `frontend/`. Install the state management library chosen in [R-05]. *(Requires: [P2-01], [R-05])*
 - [ ] **[P2-03]** Install core dependencies: `leaflet`, `react-leaflet`, `tailwindcss`. *(Requires: [P2-02])*
 - [ ] **[P2-04]** Configure Tailwind CSS in the frontend project. *(Requires: [P2-03])*
 - [ ] **[P2-05]** Configure `vitest` and `react-testing-library`. *(Requires: [P2-02]; Blocks: [P2-10])*

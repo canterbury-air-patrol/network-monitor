@@ -6,7 +6,7 @@
 
 - [ ] **[P13-02]** Document the Playback Controller workflow: loading a mission, scrubbing the timeline, and exporting. **E2E:** load a seeded mission, play it back, scrub to the midpoint, and download KML — assert the file is non-empty with the correct structure. *(Requires: [P9-06])*
 
-- [ ] **[P13-03]** Document the Signal Alert system: configuring thresholds, reading Toast notifications, and interpreting danger-zone markers. **E2E:** trigger a simulated signal drop and assert the Toast appears and the UAV marker shows the pulsing animation. *(Requires: [P10-03], [P10-05])*
+- [ ] **[P13-03]** Document the Coverage Gap Alert system: configuring adequacy thresholds, reading the gap overlay, and interpreting Toast notifications. **E2E:** simulate a ground station dropout and assert the gap overlay appears on the map and the alert panel lists the affected area and bands. *(Requires: [P10-03], [P10-05])*
 
 - [ ] **[P13-04]** Document the Ground Station manual pinning workflow: adding, editing, and removing a manual station. **E2E:** add a manual ground station, reload the page, and assert it persists with the correct position. *(Requires: Phase 3 complete)*
 

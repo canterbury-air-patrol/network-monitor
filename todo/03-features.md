@@ -4,8 +4,10 @@
 
 ## Map & Real-time Display
 
-- [ ] **[P3-01]** Implement Map component with real-time UAV markers fed from the `useWebSocket` hook.
-- [ ] **[P3-02]** Add signal coverage heatmap layer using `leaflet-heat`. *(Requires: [P3-01])*
+> **Display priority:** RF coverage over the mission area is the primary display. UAV position is tracked by two external systems and is a secondary overlay. The coverage gap layer (Phase 10) should be on by default; UAV markers are optional and off by default. Design the map component with this hierarchy from the start.
+
+- [ ] **[P3-01]** Implement Map component with a coverage heatmap as the primary layer and real-time UAV position markers as a toggleable secondary overlay fed from the `useWebSocket` hook. *(Blocks: [P3-02])*
+- [ ] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
 - [ ] **[P3-03]** Implement "Manual Pinning" mode for ground stations (frontend state management).
 - [ ] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
 - [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). *(Requires: [P3-01])*
@@ -27,8 +29,9 @@
 
 ## Testing & Field Tools
 
-- [ ] **[P3-15]** Create a Python script to simulate a UAV flight path for development and field testing. *(Referenced by: [P10-07], [P14-07])*
+- [ ] **[P3-15]** Create a Python script to simulate a UAV flight path with configurable RadioReading values per radio/band/ground station for development and field testing. *(Referenced by: [P10-11], [P14-07])*
 - [ ] **[P3-16]** Perform a "High-Glare" UI audit: verify all interactive elements meet WCAG AA contrast ratios and are operable with gloves (minimum 44 px touch targets). *(Referenced by: [P13-06])*
+- [ ] **[P3-18]** Wrap each major UI panel (Map, Sidebar, MissionControl, AlertPanel, SignalCharts) in a React `ErrorBoundary`. A crash in any one panel must show a contained fallback without affecting the others. The map layer displaying coverage gaps must remain functional even if all other panels fail.
 
 ## Unit Preferences
 

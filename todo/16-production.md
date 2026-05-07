@@ -10,3 +10,8 @@
 - [ ] **[P16-04]** Enable production Django security settings: `ALLOWED_HOSTS`, `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_HSTS_SECONDS`. Verify these are absent from development config so they cannot be accidentally toggled in dev. *(Requires: [P16-03])*
 - [ ] **[P16-05]** Write a production setup runbook at `docs/production-setup.md`: step-by-step from a fresh Linux server to a running, TLS-secured service. Each step must be a discrete, independently executable shell command so the automated validation in [P16-06] can run them verbatim. *(Requires: [P16-01], [P16-02], [P16-03], [P16-04]; Blocks: [P16-06], [P13-07])*
 - [ ] **[P16-06]** Write an automated runbook validation CI job: provision a fresh Docker environment, execute the steps from `docs/production-setup.md` verbatim, and assert `GET /api/health/` returns `200`. If this job passes on CI, the runbook is confirmed correct. *(Requires: [P16-05], [P15-01]; Referenced by: [P13-07])*
+
+## Database Backups
+
+- [ ] **[P16-07]** Configure automated PostgreSQL backups: `pg_dump` on a daily schedule, encrypted and stored offsite (S3 or equivalent). Document the backup configuration and retention policy in the production runbook ([P16-05]). *(Blocks: [P16-08])*
+- [ ] **[P16-08]** Write a backup restoration test: restore the most recent backup to a fresh database container and assert the schema and a sample of mission data are intact. Run this test quarterly and record the result in the ops log. Include the procedure in the production runbook.
