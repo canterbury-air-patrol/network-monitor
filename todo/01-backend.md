@@ -16,3 +16,6 @@
 - [ ] **[P1-14]** Write unit tests for `NodeSnapshot` serializer; include a case asserting the altitude component survives serialization round-trip. *(Requires: [P1-06])*
 - [ ] **[P1-15]** Write integration tests for Node and Snapshot API endpoints.
 - [ ] **[P1-16]** Write tests for WebSocket message broadcasting and channel group isolation.
+- [ ] **[P1-17]** Add `captured_at` (device-reported datetime) and `received_at` (server auto-set on arrival) fields to `NodeSnapshot`. Extend the telemetry ingest endpoint to accept batched submissions (array of snapshots in one request) so devices can upload buffered readings after link recovery, preserving original timestamps. Generate and apply migration. *(Blocks: [P3-14], [P9-01], [P14-03])*
+- [ ] **[P1-18]** Add telemetry validation on ingest: reject snapshots with coordinates outside valid geographic bounds, implausible altitudes, signal strength outside sensor range, or `captured_at` exceeding a configurable staleness threshold. Return structured error codes that the device SDK can interpret. *(Requires: [P1-17])*
+- [ ] **[P1-19]** Add spatial and timestamp indexes to `NodeSnapshot`. Profile a time-range query over 10k snapshots and confirm it meets an acceptable latency threshold before moving to Phase 9. *(Referenced by: Phase 9 and Phase 10 queries)*

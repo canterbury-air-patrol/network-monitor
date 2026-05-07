@@ -12,4 +12,6 @@
 
 - [ ] **[P13-05]** Document device registration and API key management for field operators: creating a device, issuing a key, and rotating it. **E2E:** create a device in admin, rotate the key, issue a telemetry request with the old key and assert it is rejected, then assert the new key is accepted. *(Requires: [P4-07], [P4-08])*
 
-- [ ] **[P13-06]** Document the Field Testing Protocol: outdoor readability (high-glare conditions), glove operation (touch target sizes), and the connectivity/battery checklist. **E2E:** run the WCAG AA contrast and 44 px touch-target assertions from [P3-09] as an automated accessibility check in CI. *(Requires: [P3-09], [P12-04])*
+- [ ] **[P13-06]** Document the Field Testing Protocol: outdoor readability (high-glare conditions), glove operation (touch target sizes), and the connectivity/battery checklist. **E2E:** run the WCAG AA contrast and 44 px touch-target assertions from [P3-16] as an automated accessibility check in CI. *(Requires: [P3-16], [P12-04])*
+
+- [ ] **[P13-07]** Document the production environment setup. This entry is complete only when the automated runbook validation job [P16-06] passes in CI — that job is the proof that the documented steps are correct. *(Requires: [P16-06])*
