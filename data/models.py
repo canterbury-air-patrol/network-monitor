@@ -42,7 +42,7 @@ class NodeInterface(models.Model):
 class NodeSnapshot(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
-    position = models.PointField(geography=True)
+    position = models.PointField(dim=3, geography=True)
 
     GEOFIELD = "position"
     GEOJSON_FIELDS = (
