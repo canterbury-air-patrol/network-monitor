@@ -10,7 +10,7 @@ Operate using a **Research -> Strategy -> Execution** lifecycle.
     - **Step 1: Mark Todo:** Mark the current task (e.g., `[P1-01]`) in the relevant `todo/` file as "in progress".
     - **Step 2: Implement:** Apply surgical code changes.
     - **Step 3: Migrations:** After any model change, generate a migration (`makemigrations`), inspect it for destructive operations, apply it (`migrate`), verify the suite passes, and confirm it is reversible (`migrate <app> <previous>`).
-    - **Step 4: Validate:** Run Dockerized tests, linting (`ruff`/`prettier`), and type-checking (`tsc`).
+    - **Step 4: Validate:** Run `./check-code.sh` before every commit to ensure linting, formatting, and type-checking all pass. Then run Dockerized tests.
     - **Step 5: Review:** Invoke a separate review pass (a fresh agent context or peer review) to check for architectural alignment before marking the task complete.
     - **Step 6: Finalize:** Mark the task as completed in the `todo/` file.
 
