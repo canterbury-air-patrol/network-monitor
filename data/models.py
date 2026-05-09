@@ -42,12 +42,12 @@ class NodeInterface(models.Model):
 
 class Radio(models.Model):
     class RadioType(models.TextChoices):
-        WIFI = 'wifi', 'WiFi'
-        LORA = 'lora', 'LoRa'
-        CELLULAR = 'cellular', 'Cellular'
-        BLUETOOTH = 'bluetooth', 'Bluetooth'
+        WIFI = "wifi", "WiFi"
+        LORA = "lora", "LoRa"
+        CELLULAR = "cellular", "Cellular"
+        BLUETOOTH = "bluetooth", "Bluetooth"
 
-    node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='radios')
+    node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name="radios")
     radio_type = models.CharField(max_length=20, choices=RadioType.choices)
     bands = models.JSONField(default=list, help_text='Supported band/frequency identifiers, e.g. ["2.4GHz", "5GHz"]')
 
@@ -83,30 +83,18 @@ class Radio(models.Model):
 
 class NodeSnapshot(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField()
+    captured_at = models.DateTimeField(help_text="Device-reported capture timestamp")
+    received_at = models.DateTimeField(auto_now_add=True, help_text="Server arrival timestamp")
     position = models.PointField(dim=3, geography=True)
 
     GEOFIELD = "position"
-    GEOJSON_FIELDS = (
-        "node",
-        "timestamp",
-    )
+    GEOJSON_FIELDS = ("node", "captured_at")
 
     def __str__(self):
-        return "{} status @ {}".format(self.node, self.timestamp)
+        return "{} status @ {}".format(self.node, self.captured_at)
 
     def natural_key(self):
-        return self.timestamp
-
-
-class NodeWirelessNeighbour(models.Model):
-    snapshot = models.ForeignKey(NodeSnapshot, on_delete=models.CASCADE)
-    interface = models.ForeignKey(NodeInterface, on_delete=models.CASCADE)
-    neighbour_address = models.ForeignKey(NodeAddress, on_delete=models.CASCADE)
-    signal_strength = models.IntegerField()
-
-    def __str__(self):
-        return "{} link to {} strength {}".format(self.snapshot.node, self.neighbour_address, self.signal_strength)
+        return self.captured_at
 
 
 class NodeRoute(models.Model):
