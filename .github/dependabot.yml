@@ -1,0 +1,55 @@
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      django:
+        patterns:
+          - "Django*"
+          - "psycopg2*"
+          - "django-*"
+      testing:
+        patterns:
+          - "pytest*"
+          - "factory-boy"
+      linting:
+        patterns:
+          - "ruff"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  # Uncomment when frontend/package.json is created in [P2-01]
+  # - package-ecosystem: npm
+  #   directory: /frontend
+  #   schedule:
+  #     interval: weekly
+  #     day: monday
+  #   open-pull-requests-limit: 5
+  #   groups:
+  #     react:
+  #       patterns:
+  #         - "react*"
+  #         - "@types/react*"
+  #     leaflet:
+  #       patterns:
+  #         - "leaflet*"
+  #         - "react-leaflet*"
+  #     vite:
+  #       patterns:
+  #         - "vite*"
+  #         - "@vitejs/*"
+  #     testing:
+  #       patterns:
+  #         - "vitest*"
+  #         - "@playwright/*"
+  #         - "playwright*"
