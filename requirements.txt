@@ -1,6 +1,11 @@
 Django==6.0.5
 psycopg2-binary==2.9.12
 django-leaflet==0.33.0
+djangorestframework==3.17.1
+django-cors-headers==4.9.0
+channels==4.3.2
+channels-redis==4.3.0
+daphne==4.2.1
 ruff
 pytest
 pytest-django
