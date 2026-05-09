@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Node, NodeAddress, NodeInterface, NodeSnapshot, NodeRoute, NodeWirelessNeighbour
+from .models import Node, NodeAddress, NodeInterface, NodeRoute, NodeSnapshot, NodeWirelessNeighbour
 
 # Register your models here.
 admin.site.register(Node)

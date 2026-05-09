@@ -14,13 +14,15 @@ class Node(models.Model):
 class NodeAddress(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
     address = models.CharField(max_length=50)
+
     class Layer(models.IntegerChoices):
         L2 = 2
         L3 = 3
+
     address_layer = models.IntegerField(choices=Layer.choices)
 
     def __str__(self):
-        return '{} on {}'.format(self.address, self.node)
+        return "{} on {}".format(self.address, self.node)
 
     def natural_key(self):
         return self.address
@@ -31,7 +33,7 @@ class NodeInterface(models.Model):
     ifname = models.CharField(max_length=20)
 
     def __str__(self):
-        return '{} on {}'.format(self.ifname, self.node)
+        return "{} on {}".format(self.ifname, self.node)
 
     def natural_key(self):
         return self.__str__()
@@ -42,11 +44,14 @@ class NodeSnapshot(models.Model):
     timestamp = models.DateTimeField()
     position = models.PointField(geography=True)
 
-    GEOFIELD = 'position'
-    GEOJSON_FIELDS = ('node', 'timestamp', )
+    GEOFIELD = "position"
+    GEOJSON_FIELDS = (
+        "node",
+        "timestamp",
+    )
 
     def __str__(self):
-        return '{} status @ {}'.format(self.node, self.timestamp)
+        return "{} status @ {}".format(self.node, self.timestamp)
 
     def natural_key(self):
         return self.timestamp
@@ -59,7 +64,7 @@ class NodeWirelessNeighbour(models.Model):
     signal_strength = models.IntegerField()
 
     def __str__(self):
-        return '{} link to {} strength {}'.format(self.snapshot.node, self.neighbour_address, self.signal_strength)
+        return "{} link to {} strength {}".format(self.snapshot.node, self.neighbour_address, self.signal_strength)
 
 
 class NodeRoute(models.Model):
@@ -68,4 +73,4 @@ class NodeRoute(models.Model):
     next_hop = models.ForeignKey(NodeAddress, on_delete=models.CASCADE)
 
     def __str__(self):
-        return 'On {} route {} via {}'.format(self.snapshot.node, self.route, self.next_hop)
+        return "On {} route {} via {}".format(self.snapshot.node, self.route, self.next_hop)

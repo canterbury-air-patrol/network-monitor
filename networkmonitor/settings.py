@@ -17,85 +17,85 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 try:
     from networkmonitor.local_settings import *
 except ImportError:
-    DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-    LANGUAGE_CODE = os.environ.get('DJANGO_LANGUAGE_CODE', 'en-us')
-    TIME_ZONE = os.environ.get('DJANGO_TIME_ZONE', 'UTC')
-    ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
+    DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+    LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE_CODE", "en-us")
+    TIME_ZONE = os.environ.get("DJANGO_TIME_ZONE", "UTC")
+    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'HOST': os.environ.get('POSTGRES_SERVER', 'db'),
-            'NAME': os.environ.get('POSTGRES_DBNAME', 'networkmonitor'),
-            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "HOST": os.environ.get("POSTGRES_SERVER", "db"),
+            "NAME": os.environ.get("POSTGRES_DBNAME", "networkmonitor"),
+            "USER": os.environ.get("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
         }
     }
 
-_secretkey_path = os.path.join(BASE_DIR, 'networkmonitor', 'secretkey.txt')
+_secretkey_path = os.path.join(BASE_DIR, "networkmonitor", "secretkey.txt")
 if os.path.exists(_secretkey_path):
     with open(_secretkey_path) as f:
         SECRET_KEY = f.read().strip()
 else:
-    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # Application definition
 
 INSTALLED_APPS = [
-    'data',
-    'map',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.gis',
+    "data",
+    "map",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.gis",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'networkmonitor.urls'
+ROOT_URLCONF = "networkmonitor.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'networkmonitor.wsgi.application'
+WSGI_APPLICATION = "networkmonitor.wsgi.application"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -113,5 +113,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
