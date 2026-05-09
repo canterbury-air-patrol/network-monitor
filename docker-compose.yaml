@@ -22,8 +22,6 @@ services:
       - db
   test:
     build: .
-    volumes:
-      - ./:/code/
     environment:
       DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
       POSTGRES_SERVER: db
