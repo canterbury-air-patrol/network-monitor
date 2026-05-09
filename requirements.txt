@@ -1,7 +1,7 @@
-django
-psycopg2-binary
-django-leaflet
-pylint
+Django==6.0.4
+psycopg2-binary==2.9.12
+django-leaflet==0.33.0
+ruff
 pytest
 pytest-django
 factory-boy

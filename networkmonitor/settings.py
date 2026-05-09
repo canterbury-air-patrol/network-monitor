@@ -12,14 +12,31 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 
-# Import the users settings
-from networkmonitor.local_settings import *
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-with open(os.path.join(BASE_DIR, 'networkmonitor', 'secretkey.txt')) as f:
-    SECRET_KEY = f.read().strip()
+try:
+    from networkmonitor.local_settings import *
+except ImportError:
+    DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+    LANGUAGE_CODE = os.environ.get('DJANGO_LANGUAGE_CODE', 'en-us')
+    TIME_ZONE = os.environ.get('DJANGO_TIME_ZONE', 'UTC')
+    ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'HOST': os.environ.get('POSTGRES_SERVER', 'db'),
+            'NAME': os.environ.get('POSTGRES_DBNAME', 'networkmonitor'),
+            'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        }
+    }
+
+_secretkey_path = os.path.join(BASE_DIR, 'networkmonitor', 'secretkey.txt')
+if os.path.exists(_secretkey_path):
+    with open(_secretkey_path) as f:
+        SECRET_KEY = f.read().strip()
+else:
+    SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # Application definition
 

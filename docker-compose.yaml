@@ -2,7 +2,16 @@ version: '3'
 
 services:
   db:
-    image: mdillon/postgis
+    image: postgis/postgis:15-3.4
+    environment:
+      POSTGRES_DB: networkmonitor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   app:
     build: .
     volumes:
@@ -15,6 +24,13 @@ services:
     build: .
     volumes:
       - ./:/code/
+    environment:
+      DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+      POSTGRES_SERVER: db
+      POSTGRES_DBNAME: networkmonitor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: pytest
