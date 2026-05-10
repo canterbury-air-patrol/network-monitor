@@ -1,6 +1,11 @@
 from rest_framework.routers import DefaultRouter
 
-router = DefaultRouter()
+from . import api_views
 
-# ViewSets registered here in [P1-10]
+router = DefaultRouter()
+router.register("nodes", api_views.NodeViewSet, basename="node")
+router.register("radios", api_views.RadioViewSet, basename="radio")
+router.register("snapshots", api_views.NodeSnapshotViewSet, basename="snapshot")
+router.register("readings", api_views.RadioReadingViewSet, basename="radioreading")
+
 urlpatterns = router.urls
