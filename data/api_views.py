@@ -5,7 +5,7 @@ from .serializers import NodeSerializer, NodeSnapshotSerializer, RadioReadingSer
 
 
 class NodeViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Node.objects.all()
+    queryset = Node.objects.order_by("name")
     serializer_class = NodeSerializer
 
 
@@ -13,7 +13,7 @@ class RadioViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RadioSerializer
 
     def get_queryset(self):
-        qs = Radio.objects.all()
+        qs = Radio.objects.order_by("node", "radio_type")
         node_id = self.request.query_params.get("node")
         if node_id:
             qs = qs.filter(node_id=node_id)
@@ -35,7 +35,7 @@ class RadioReadingViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RadioReadingSerializer
 
     def get_queryset(self):
-        qs = RadioReading.objects.all()
+        qs = RadioReading.objects.order_by("snapshot", "radio", "band")
         snapshot_id = self.request.query_params.get("snapshot")
         if snapshot_id:
             qs = qs.filter(snapshot_id=snapshot_id)
