@@ -42,6 +42,7 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "data",
     "map",
     "django.contrib.admin",
@@ -85,6 +86,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "networkmonitor.wsgi.application"
+ASGI_APPLICATION = "networkmonitor.asgi.application"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
