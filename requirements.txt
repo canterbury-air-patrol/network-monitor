@@ -9,4 +9,5 @@ daphne==4.2.1
 ruff
 pytest
 pytest-django
+pytest-asyncio
 factory-boy
