@@ -11,6 +11,7 @@ from .factories import (
     RadioFactory,
     RadioReadingFactory,
 )
+from .models import NodeSnapshot, RadioReading
 from .serializers import NodeSerializer, NodeSnapshotSerializer, RadioSerializer
 
 
@@ -143,3 +144,117 @@ def test_readings_filter_by_radio(api_client):
     assert response.data["count"] == 1
     assert response.data["results"][0]["id"] == reading_a.pk
     _ = reading_b  # ensure second reading exists to confirm filtering
+
+
+# --- P1-17: Batched telemetry ingest ---
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_batch(api_client):
+    node = NodeFactory()
+    radio = RadioFactory(node=node)
+    station = GroundStationFactory()
+
+    payload = [
+        {
+            "node": node.pk,
+            "captured_at": "2024-01-01T10:00:00Z",
+            "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
+            "radio_readings": [
+                {"radio": radio.pk, "ground_station": station.pk, "band": "2.4GHz", "rssi_dbm": -65, "snr_db": 12.0}
+            ],
+        },
+        {
+            "node": node.pk,
+            "captured_at": "2024-01-01T10:05:00Z",
+            "position": {"longitude": 172.6, "latitude": -43.6, "altitude": 110.0},
+            "radio_readings": [],
+        },
+    ]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 201
+    assert response.data["created"] == 2
+    assert NodeSnapshot.objects.count() == 2
+    assert RadioReading.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_preserves_captured_at(api_client):
+    node = NodeFactory()
+
+    payload = [
+        {
+            "node": node.pk,
+            "captured_at": "2024-03-15T08:30:00Z",
+            "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
+            "radio_readings": [],
+        }
+    ]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 201
+    snap = NodeSnapshot.objects.get()
+    assert snap.captured_at == datetime.datetime(2024, 3, 15, 8, 30, 0, tzinfo=datetime.timezone.utc)
+    assert snap.received_at is not None
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_non_list_rejected(api_client):
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), {}, format="json")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_invalid_position_rejected(api_client):
+    node = NodeFactory()
+
+    payload = [
+        {
+            "node": node.pk,
+            "captured_at": "2024-01-01T10:00:00Z",
+            "position": {"longitude": 172.5},
+            "radio_readings": [],
+        }
+    ]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_out_of_range_coordinates_rejected(api_client):
+    node = NodeFactory()
+
+    for bad_position in [
+        {"longitude": 200.0, "latitude": -43.5, "altitude": 100.0},
+        {"longitude": 172.5, "latitude": -95.0, "altitude": 100.0},
+    ]:
+        payload = [
+            {
+                "node": node.pk,
+                "captured_at": "2024-01-01T10:00:00Z",
+                "position": bad_position,
+                "radio_readings": [],
+            }
+        ]
+        response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+        assert response.status_code == 400, f"expected 400 for position {bad_position}"
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_omitted_radio_readings(api_client):
+    node = NodeFactory()
+
+    payload = [
+        {
+            "node": node.pk,
+            "captured_at": "2024-01-01T10:00:00Z",
+            "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
+        }
+    ]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 201
+    assert NodeSnapshot.objects.count() == 1
+    assert RadioReading.objects.count() == 0

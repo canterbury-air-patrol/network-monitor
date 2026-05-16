@@ -1,7 +1,16 @@
-from rest_framework import viewsets
+from django.db import transaction
+from rest_framework import status, viewsets
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Node, NodeSnapshot, Radio, RadioReading
-from .serializers import NodeSerializer, NodeSnapshotSerializer, RadioReadingSerializer, RadioSerializer
+from .serializers import (
+    NodeSerializer,
+    NodeSnapshotSerializer,
+    NodeSnapshotWriteSerializer,
+    RadioReadingSerializer,
+    RadioSerializer,
+)
 
 
 class NodeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -43,3 +52,14 @@ class RadioReadingViewSet(viewsets.ReadOnlyModelViewSet):
         if radio_id:
             qs = qs.filter(radio_id=radio_id)
         return qs
+
+
+class TelemetryIngestView(APIView):
+    def post(self, request):
+        if not isinstance(request.data, list):
+            return Response({"detail": "Expected a list of snapshots."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = NodeSnapshotWriteSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            snapshots = serializer.save()
+        return Response({"created": len(snapshots)}, status=status.HTTP_201_CREATED)
