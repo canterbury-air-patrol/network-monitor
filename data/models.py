@@ -91,6 +91,12 @@ class NodeSnapshot(models.Model):
     GEOFIELD = "position"
     GEOJSON_FIELDS = ("node", "captured_at")
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["captured_at"]),
+            models.Index(fields=["received_at"]),
+        ]
+
     def __str__(self):
         return "{} status @ {}".format(self.node, self.captured_at)
 

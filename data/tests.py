@@ -1,6 +1,8 @@
+import time
+
 import pytest
 from django.contrib.gis.geos import Point
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from .models import GroundStation, Node, NodeSnapshot, Radio, RadioReading
@@ -147,3 +149,62 @@ def test_radio_reading_rejects_both_receivers():
                 band="2.4GHz",
                 rssi_dbm=-70,
             )
+
+
+# --- P1-19: Spatial + timestamp indexes ---
+
+
+@pytest.mark.django_db
+def test_nodesnapshot_captured_at_index_exists():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT indexname FROM pg_indexes WHERE tablename = 'data_nodesnapshot' AND indexdef LIKE '%captured_at%'"
+        )
+        assert cursor.fetchone() is not None
+
+
+@pytest.mark.django_db
+def test_nodesnapshot_received_at_index_exists():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT indexname FROM pg_indexes WHERE tablename = 'data_nodesnapshot' AND indexdef LIKE '%received_at%'"
+        )
+        assert cursor.fetchone() is not None
+
+
+@pytest.mark.django_db
+def test_nodesnapshot_spatial_index_exists():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT indexname FROM pg_indexes WHERE tablename = 'data_nodesnapshot' AND indexdef LIKE '%position%'"
+        )
+        assert cursor.fetchone() is not None
+
+
+@pytest.mark.django_db
+@pytest.mark.slow
+def test_time_range_query_performance():
+    node = make_node()
+    now = timezone.now()
+    import datetime
+
+    NodeSnapshot.objects.bulk_create(
+        [
+            NodeSnapshot(
+                node=node,
+                # offset by i+1 so i=0 → 1 s ago, keeping boundary arithmetic clean
+                captured_at=now - datetime.timedelta(seconds=i + 1),
+                position=Point(172.5, -43.5, 100.0, srid=4326),
+            )
+            for i in range(10_000)
+        ]
+    )
+
+    start = time.monotonic()
+    results = list(
+        NodeSnapshot.objects.filter(captured_at__gte=now - datetime.timedelta(hours=1)).values("id", "captured_at")
+    )
+    elapsed = time.monotonic() - start
+
+    assert len(results) == 3_600
+    assert elapsed < 0.5, f"time-range query took {elapsed:.3f}s — expected < 0.5s"
