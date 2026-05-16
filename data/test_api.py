@@ -154,11 +154,12 @@ def test_telemetry_ingest_batch(api_client):
     node = NodeFactory()
     radio = RadioFactory(node=node)
     station = GroundStationFactory()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     payload = [
         {
             "node": node.pk,
-            "captured_at": "2024-01-01T10:00:00Z",
+            "captured_at": now.isoformat(),
             "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
             "radio_readings": [
                 {"radio": radio.pk, "ground_station": station.pk, "band": "2.4GHz", "rssi_dbm": -65, "snr_db": 12.0}
@@ -166,7 +167,7 @@ def test_telemetry_ingest_batch(api_client):
         },
         {
             "node": node.pk,
-            "captured_at": "2024-01-01T10:05:00Z",
+            "captured_at": (now - datetime.timedelta(minutes=5)).isoformat(),
             "position": {"longitude": 172.6, "latitude": -43.6, "altitude": 110.0},
             "radio_readings": [],
         },
@@ -182,11 +183,14 @@ def test_telemetry_ingest_batch(api_client):
 @pytest.mark.django_db
 def test_telemetry_ingest_preserves_captured_at(api_client):
     node = NodeFactory()
+    # Use a timestamp a few minutes ago so it passes the staleness check
+    captured = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=2)
+    captured = captured.replace(microsecond=0)
 
     payload = [
         {
             "node": node.pk,
-            "captured_at": "2024-03-15T08:30:00Z",
+            "captured_at": captured.isoformat(),
             "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
             "radio_readings": [],
         }
@@ -195,7 +199,7 @@ def test_telemetry_ingest_preserves_captured_at(api_client):
     response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
     assert response.status_code == 201
     snap = NodeSnapshot.objects.get()
-    assert snap.captured_at == datetime.datetime(2024, 3, 15, 8, 30, 0, tzinfo=datetime.timezone.utc)
+    assert snap.captured_at == captured
     assert snap.received_at is not None
 
 
@@ -249,7 +253,7 @@ def test_telemetry_ingest_omitted_radio_readings(api_client):
     payload = [
         {
             "node": node.pk,
-            "captured_at": "2024-01-01T10:00:00Z",
+            "captured_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
         }
     ]
@@ -258,3 +262,96 @@ def test_telemetry_ingest_omitted_radio_readings(api_client):
     assert response.status_code == 201
     assert NodeSnapshot.objects.count() == 1
     assert RadioReading.objects.count() == 0
+
+
+# --- P1-18: Structured validation error codes ---
+
+
+def _valid_payload(node):
+    return {
+        "node": node.pk,
+        "captured_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "position": {"longitude": 172.5, "latitude": -43.5, "altitude": 100.0},
+        "radio_readings": [],
+    }
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_implausible_altitude_rejected(api_client):
+    node = NodeFactory()
+    payload = [_valid_payload(node)]
+    payload[0]["position"]["altitude"] = 99_999.0
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    assert any(e.get("code") == "IMPLAUSIBLE_ALTITUDE" for e in errors)
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_rssi_out_of_range_rejected(api_client):
+    node = NodeFactory()
+    radio = RadioFactory(node=node)
+    station = GroundStationFactory()
+    payload = [_valid_payload(node)]
+    payload[0]["radio_readings"] = [{"radio": radio.pk, "ground_station": station.pk, "band": "2.4GHz", "rssi_dbm": 10}]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    assert any(e.get("code") == "RSSI_OUT_OF_RANGE" for e in errors)
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_unknown_band_rejected(api_client):
+    node = NodeFactory()
+    radio = RadioFactory(node=node, bands=["2.4GHz"])
+    station = GroundStationFactory()
+    payload = [_valid_payload(node)]
+    payload[0]["radio_readings"] = [
+        {"radio": radio.pk, "ground_station": station.pk, "band": "915MHz", "rssi_dbm": -65}
+    ]
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    assert any(e.get("code") == "UNKNOWN_BAND" for e in errors)
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_stale_timestamp_rejected(api_client):
+    node = NodeFactory()
+    payload = [_valid_payload(node)]
+    payload[0]["captured_at"] = "2020-01-01T00:00:00Z"
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    assert any(e.get("code") == "STALE_TIMESTAMP" for e in errors)
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_future_timestamp_rejected(api_client):
+    node = NodeFactory()
+    payload = [_valid_payload(node)]
+    far_future = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    payload[0]["captured_at"] = far_future.isoformat()
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), payload, format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    assert any(e.get("code") == "FUTURE_TIMESTAMP" for e in errors)
+
+
+@pytest.mark.django_db
+def test_telemetry_ingest_error_response_includes_index(api_client):
+    node = NodeFactory()
+    good = _valid_payload(node)
+    bad = _valid_payload(node)
+    bad["position"]["altitude"] = 99_999.0
+
+    response = api_client.post(reverse("data_api_v1:telemetry-ingest"), [good, bad], format="json")
+    assert response.status_code == 400
+    errors = response.data["errors"]
+    altitude_error = next(e for e in errors if e.get("code") == "IMPLAUSIBLE_ALTITUDE")
+    assert altitude_error["index"] == 1

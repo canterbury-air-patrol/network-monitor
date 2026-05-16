@@ -137,6 +137,9 @@ if _raw_cors_origins:
 else:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
 
+TELEMETRY_MAX_AGE_HOURS = int(os.environ.get("TELEMETRY_MAX_AGE_HOURS", "24"))
+TELEMETRY_FUTURE_TOLERANCE_MINUTES = 5
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
