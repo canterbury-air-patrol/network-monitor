@@ -54,12 +54,44 @@ class RadioReadingViewSet(viewsets.ReadOnlyModelViewSet):
         return qs
 
 
+def _walk_errors(node, out, index, path):
+    if isinstance(node, list):
+        if node and isinstance(node[0], dict):
+            for i, child in enumerate(node):
+                if child:
+                    _walk_errors(child, out, index, f"{path}.{i}" if path else str(i))
+        else:
+            for msg in node:
+                entry = {"field": path, "detail": str(msg)}
+                if index is not None:
+                    entry["index"] = index
+                code = getattr(msg, "code", None)
+                if code and code != "invalid":
+                    entry["code"] = code
+                out.append(entry)
+    elif isinstance(node, dict):
+        for key, child in node.items():
+            _walk_errors(child, out, index, f"{path}.{key}" if path else key)
+
+
+def _flatten_errors(errors):
+    out = []
+    if isinstance(errors, list):
+        for idx, item in enumerate(errors):
+            if item:
+                _walk_errors(item, out, idx, "")
+    else:
+        _walk_errors(errors, out, None, "")
+    return out
+
+
 class TelemetryIngestView(APIView):
     def post(self, request):
         if not isinstance(request.data, list):
             return Response({"detail": "Expected a list of snapshots."}, status=status.HTTP_400_BAD_REQUEST)
         serializer = NodeSnapshotWriteSerializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            return Response({"errors": _flatten_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
         with transaction.atomic():
             snapshots = serializer.save()
         return Response({"created": len(snapshots)}, status=status.HTTP_201_CREATED)
