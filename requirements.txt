@@ -1,4 +1,5 @@
 Django==6.0.5
+celery[redis]
 psycopg[binary,pool]==3.3.4
 django-leaflet==0.33.0
 djangorestframework==3.17.1

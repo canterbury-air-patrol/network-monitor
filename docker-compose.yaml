@@ -45,3 +45,13 @@ services:
       redis:
         condition: service_healthy
     command: pytest
+  worker:
+    build: .
+    volumes:
+      - ./:/code/
+    command: celery -A networkmonitor worker --loglevel=info
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
