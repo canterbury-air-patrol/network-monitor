@@ -140,6 +140,12 @@ else:
 TELEMETRY_MAX_AGE_HOURS = int(os.environ.get("TELEMETRY_MAX_AGE_HOURS", "24"))
 TELEMETRY_FUTURE_TOLERANCE_MINUTES = 5
 
+CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
