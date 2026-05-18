@@ -1,9 +1,14 @@
+import logging
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import connection
 from rest_framework import status as drf_status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 
 
 def _check_database():
@@ -20,7 +25,7 @@ def _check_channels():
 
 class HealthView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def get(self, request):
         checks = {}
@@ -30,6 +35,7 @@ class HealthView(APIView):
             _check_database()
             checks["database"] = "ok"
         except Exception:
+            logger.exception("health check: database unavailable")
             checks["database"] = "error"
             all_ok = False
 
@@ -37,6 +43,7 @@ class HealthView(APIView):
             _check_channels()
             checks["channels"] = "ok"
         except Exception:
+            logger.exception("health check: channels layer unavailable")
             checks["channels"] = "error"
             all_ok = False
 
