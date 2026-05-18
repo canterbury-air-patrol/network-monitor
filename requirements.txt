@@ -1,5 +1,6 @@
 Django==6.0.5
 python-json-logger
+sentry-sdk[django]
 celery[redis]
 psycopg[binary,pool]==3.3.4
 django-leaflet==0.33.0
