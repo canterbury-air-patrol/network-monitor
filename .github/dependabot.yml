@@ -21,35 +21,72 @@ updates:
         patterns:
           - "ruff"
 
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+          - "react-dom*"
+      leaflet:
+        patterns:
+          - "leaflet*"
+          - "react-leaflet*"
+          - "@types/leaflet*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+          - "@tailwindcss/vite*"
+      tailwind:
+        patterns:
+          - "tailwindcss*"
+          - "prettier-plugin-tailwindcss*"
+      state:
+        patterns:
+          - "zustand*"
+          - "@tanstack/*"
+      testing:
+        patterns:
+          - "vitest*"
+          - "@vitest/*"
+          - "@playwright/*"
+          - "playwright*"
+          - "@testing-library/*"
+          - "jsdom*"
+      linting:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "typescript-eslint*"
+          - "prettier*"
+          - "globals*"
+          - "typescript*"
+          - "@types/node*"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      app:
+        patterns:
+          - "python"
+      services:
+        patterns:
+          - "redis"
+          - "postgis/postgis"
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-
-  # Uncomment when frontend/package.json is created in [P2-01]
-  # - package-ecosystem: npm
-  #   directory: /frontend
-  #   schedule:
-  #     interval: weekly
-  #     day: monday
-  #   open-pull-requests-limit: 5
-  #   groups:
-  #     react:
-  #       patterns:
-  #         - "react*"
-  #         - "@types/react*"
-  #     leaflet:
-  #       patterns:
-  #         - "leaflet*"
-  #         - "react-leaflet*"
-  #     vite:
-  #       patterns:
-  #         - "vite*"
-  #         - "@vitejs/*"
-  #     testing:
-  #       patterns:
-  #         - "vitest*"
-  #         - "@playwright/*"
-  #         - "playwright*"
