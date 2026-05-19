@@ -1,5 +1,7 @@
+import Layout from './components/Layout'
+
 function App() {
-  return <div>Network Monitor</div>
+  return <Layout />
 }
 
 export default App
