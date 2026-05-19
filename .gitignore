@@ -5,3 +5,10 @@ __pycache__/
 /static/
 networkmonitor/local_settings.py
 networkmonitor/secretkey.txt
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.playwright/
+frontend/playwright-report/
+frontend/test-results/
