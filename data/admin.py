@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     GroundStation,
     Mission,
+    MissionPhase,
     Node,
     NodeAddress,
     NodeInterface,
@@ -13,6 +14,7 @@ from .models import (
 )
 
 admin.site.register(Mission)
+admin.site.register(MissionPhase)
 admin.site.register(Node)
 admin.site.register(NodeAddress)
 admin.site.register(NodeInterface)

@@ -1,12 +1,14 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Mission, Node, NodeSnapshot, Radio, RadioReading
+from .models import Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading
 from .serializers import (
+    MissionPhaseSerializer,
     MissionSerializer,
     NodeSerializer,
     NodeSnapshotSerializer,
@@ -57,6 +59,54 @@ class MissionViewSet(viewsets.ModelViewSet):
             to_status=Mission.Status.ARCHIVED,
             error_msg="Only pending or completed missions can be archived.",
         )
+
+
+class MissionPhaseViewSet(viewsets.ModelViewSet):
+    serializer_class = MissionPhaseSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    _TERMINAL_STATUSES = (Mission.Status.COMPLETED, Mission.Status.ARCHIVED)
+
+    def get_queryset(self):
+        qs = MissionPhase.objects.select_related("mission").order_by("started_at", "id")
+        mission_id = self.request.query_params.get("mission")
+        if mission_id:
+            try:
+                mission_id = int(mission_id)
+            except (ValueError, TypeError):
+                raise ValidationError({"mission": "Must be an integer."})
+            qs = qs.filter(mission_id=mission_id)
+        return qs
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request, pk=None):
+        with transaction.atomic():
+            phase = self.get_object()
+            if phase.mission.status in self._TERMINAL_STATUSES:
+                raise ValidationError({"detail": "Cannot activate a phase for a completed or archived mission."})
+            if phase.ended_at is not None:
+                return Response({"detail": "Closed phases cannot be reactivated."}, status=status.HTTP_400_BAD_REQUEST)
+            now = timezone.now()
+            MissionPhase.objects.filter(
+                mission=phase.mission,
+                started_at__isnull=False,
+                ended_at__isnull=True,
+            ).exclude(pk=phase.pk).update(ended_at=now)
+            if phase.started_at is None:
+                phase.started_at = now
+                phase.save(update_fields=["started_at"])
+        return Response(MissionPhaseSerializer(phase).data)
+
+    @action(detail=True, methods=["post"])
+    def close(self, request, pk=None):
+        phase = self.get_object()
+        if phase.mission.status in self._TERMINAL_STATUSES:
+            raise ValidationError({"detail": "Cannot close a phase for a completed or archived mission."})
+        if not phase.is_active:
+            return Response({"detail": "Phase is not active."}, status=status.HTTP_400_BAD_REQUEST)
+        phase.ended_at = timezone.now()
+        phase.save(update_fields=["ended_at"])
+        return Response(MissionPhaseSerializer(phase).data)
 
 
 class NodeViewSet(viewsets.ReadOnlyModelViewSet):

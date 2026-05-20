@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail
 
-from .models import GroundStation, Mission, Node, NodeSnapshot, Radio, RadioReading
+from .models import GroundStation, Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading
 
 _ALTITUDE_MIN = -500
 _ALTITUDE_MAX = 60_000
@@ -19,6 +19,24 @@ class MissionSerializer(serializers.ModelSerializer):
         model = Mission
         fields = ["id", "name", "operator_notes", "status", "created_at", "updated_at"]
         read_only_fields = ["id", "status", "created_at", "updated_at"]
+
+
+class MissionPhaseSerializer(serializers.ModelSerializer):
+    is_active = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = MissionPhase
+        fields = [
+            "id",
+            "mission",
+            "name",
+            "area_of_operation_notes",
+            "ground_station_layout",
+            "started_at",
+            "ended_at",
+            "is_active",
+        ]
+        read_only_fields = ["id", "started_at", "ended_at", "is_active"]
 
 
 class NodeSerializer(serializers.ModelSerializer):
