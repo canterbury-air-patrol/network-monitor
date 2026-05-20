@@ -9,7 +9,7 @@
 - [x] **[P3-01]** Implement Map component with a coverage heatmap as the primary layer and real-time UAV position markers as a toggleable secondary overlay fed from the `useWebSocket` hook. *(Blocks: [P3-02])*
 - [ ] **[P3-19]** Add a server-wide default map centre and zoom (admin-configurable, exposed via a settings API endpoint), with an optional per-mission override so the map snaps to the mission area on activation. The frontend reads this on load and uses it as the initial view. Site-level config deferred to Phase 5; for now a single deployment-wide default suffices. *(Requires: [P3-01]; see also: Phase 5 Org/Site multi-tenancy)*
 - [ ] **[P3-20]** On first load (or when no saved centre exists), attempt to centre the map on the user's device location via the browser Geolocation API, falling back to the hardcoded default if permission is denied or unavailable. *(Requires: [P3-01])*
-- [ ] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
+- [x] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
 - [ ] **[P3-03]** Implement "Manual Pinning" mode for ground stations (frontend state management).
 - [ ] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
 - [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). *(Requires: [P3-01])*

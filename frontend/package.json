@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.77.2",
+    "@types/leaflet.heat": "^0.2.5",
     "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-leaflet": "^5.0.0",
