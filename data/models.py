@@ -1,6 +1,6 @@
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import F, Q
 
 
 class Node(models.Model):
@@ -181,3 +181,41 @@ class Mission(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_status_display()})"
+
+
+class MissionPhase(models.Model):
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name="phases")
+    name = models.CharField(max_length=255)
+    area_of_operation_notes = models.TextField(blank=True)
+    ground_station_layout = models.TextField(blank=True)
+    # Phase boundaries are timestamp windows: snapshots whose captured_at falls
+    # between started_at and ended_at belong to this phase. This keeps ingest
+    # writes cheap (no FK to update on every snapshot).
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["started_at", "id"]
+        constraints = [
+            models.CheckConstraint(
+                name="missionphase_ended_requires_started",
+                condition=Q(ended_at__isnull=True) | Q(started_at__isnull=False),
+            ),
+            models.CheckConstraint(
+                name="missionphase_started_at_lte_ended_at",
+                condition=Q(ended_at__isnull=True) | Q(started_at__lte=F("ended_at")),
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["mission", "started_at", "ended_at"]),
+        ]
+
+    @property
+    def is_active(self):
+        # started_at is always set to timezone.now() by the activate action,
+        # so a future started_at cannot arise through the API. Phases with a
+        # null started_at have not been activated yet and are not active.
+        return self.started_at is not None and self.ended_at is None
+
+    def __str__(self):
+        return f"{self.mission} — {self.name}"
