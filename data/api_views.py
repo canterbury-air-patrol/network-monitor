@@ -1,16 +1,62 @@
 from django.db import transaction
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Node, NodeSnapshot, Radio, RadioReading
+from .models import Mission, Node, NodeSnapshot, Radio, RadioReading
 from .serializers import (
+    MissionSerializer,
     NodeSerializer,
     NodeSnapshotSerializer,
     NodeSnapshotWriteSerializer,
     RadioReadingSerializer,
     RadioSerializer,
 )
+
+
+class MissionViewSet(viewsets.ModelViewSet):
+    queryset = Mission.objects.order_by("-created_at")
+    serializer_class = MissionSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    def perform_create(self, serializer):
+        serializer.save(status=Mission.Status.PENDING)
+
+    def _transition(self, from_statuses, to_status, error_msg):
+        with transaction.atomic():
+            mission = self.get_object()
+            mission = Mission.objects.select_for_update().get(pk=mission.pk)
+            if mission.status not in from_statuses:
+                raise ValidationError({"detail": error_msg})
+            mission.status = to_status
+            mission.save(update_fields=["status", "updated_at"])
+        return Response(self.get_serializer(mission).data)
+
+    @action(detail=True, methods=["post"])
+    def start(self, request, pk=None):
+        return self._transition(
+            from_statuses=[Mission.Status.PENDING],
+            to_status=Mission.Status.ACTIVE,
+            error_msg="Only pending missions can be started.",
+        )
+
+    @action(detail=True, methods=["post"])
+    def stop(self, request, pk=None):
+        return self._transition(
+            from_statuses=[Mission.Status.ACTIVE],
+            to_status=Mission.Status.COMPLETED,
+            error_msg="Only active missions can be stopped.",
+        )
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        return self._transition(
+            from_statuses=[Mission.Status.PENDING, Mission.Status.COMPLETED],
+            to_status=Mission.Status.ARCHIVED,
+            error_msg="Only pending or completed missions can be archived.",
+        )
 
 
 class NodeViewSet(viewsets.ReadOnlyModelViewSet):
