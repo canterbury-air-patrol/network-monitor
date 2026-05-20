@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import api_views
 
 router = DefaultRouter()
+router.register("missions", api_views.MissionViewSet, basename="mission")
 router.register("nodes", api_views.NodeViewSet, basename="node")
 router.register("radios", api_views.RadioViewSet, basename="radio")
 router.register("snapshots", api_views.NodeSnapshotViewSet, basename="snapshot")
