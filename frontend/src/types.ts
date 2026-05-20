@@ -43,3 +43,11 @@ export interface NodeSnapshotMessage {
     altitude: number
   }
 }
+
+export interface ManualGroundStation {
+  id: number
+  name: string
+  latitude: number
+  longitude: number
+  altitudeM: number
+}
