@@ -2,7 +2,7 @@ import factory
 from django.contrib.gis.geos import Point
 from django.utils import timezone
 
-from .models import GroundStation, Mission, Node, NodeSnapshot, Radio, RadioReading
+from .models import GroundStation, Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading
 
 
 class MissionFactory(factory.django.DjangoModelFactory):
@@ -12,6 +12,16 @@ class MissionFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: f"Mission {n:02d}")
     operator_notes = factory.Faker("sentence")
     status = Mission.Status.PENDING
+
+
+class MissionPhaseFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = MissionPhase
+
+    mission = factory.SubFactory(MissionFactory)
+    name = factory.Sequence(lambda n: f"Phase {n:02d}")
+    area_of_operation_notes = ""
+    ground_station_layout = ""
 
 
 class NodeFactory(factory.django.DjangoModelFactory):
