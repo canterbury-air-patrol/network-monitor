@@ -1,10 +1,10 @@
-Django==6.0.7
+Django==6.1
 python-json-logger
 sentry-sdk[django]
 celery[redis]
 psycopg[binary,pool]==3.3.4
 django-leaflet==0.33.0
-djangorestframework==3.17.1
+djangorestframework==3.18.0
 django-cors-headers==4.9.0
 channels==4.3.2
 channels-redis==4.3.0
