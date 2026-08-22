@@ -172,10 +172,10 @@ def _walk_errors(node, out, index, path):
 
 def _flatten_errors(errors):
     out = []
-    if isinstance(errors, list):
-        for idx, item in enumerate(errors):
-            if item:
-                _walk_errors(item, out, idx, "")
+    if isinstance(errors, dict) and all(isinstance(key, int) for key in errors):
+        # many=True serializers report errors as a dict keyed by the item's index
+        for idx, item in errors.items():
+            _walk_errors(item, out, idx, "")
     else:
         _walk_errors(errors, out, None, "")
     return out
