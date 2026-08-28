@@ -36,6 +36,8 @@ run_check "ruff format" "${RUFF[@]}" format --check .
 if [ -f frontend/package.json ]; then
     if [ -x build-frontend.sh ]; then
         run_check "prettier format" ./build-frontend.sh prettier --check "src/**/*.{ts,tsx}"
+        run_check "eslint"          ./build-frontend.sh npm run lint
+        run_check "vitest"          ./build-frontend.sh npm run test
     else
         echo ""
         echo "==> Frontend: skipped (build-frontend.sh not yet created)"
