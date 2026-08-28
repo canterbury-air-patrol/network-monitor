@@ -23,13 +23,13 @@
 
 ## Async Task Queue
 
-- [ ] **[P1-24]** Add `celery` and a Redis client to `requirements.txt`. Configure Celery to use the same Redis instance as the Channels layer (no new infrastructure service). Create `networkmonitor/celery.py` and add a `worker` service to Docker Compose that can run alongside the dev server. *(Referenced by: Phase 7, 8, 9, 10 for offloading expensive computations from the ASGI process)*
+- [x] **[P1-24]** Add `celery` and a Redis client to `requirements.txt`. Configure Celery to use the same Redis instance as the Channels layer (no new infrastructure service). Create `networkmonitor/celery.py` and add a `worker` service to Docker Compose that can run alongside the dev server. *(Referenced by: Phase 7, 8, 9, 10 for offloading expensive computations from the ASGI process)*
 
 ## Telemetry Ingest
 
-- [ ] **[P1-17]** Extend the telemetry ingest endpoint to accept batched submissions — an array of snapshots each with their `RadioReading` records — so devices can flush their offline buffer after link recovery, preserving original `captured_at` timestamps. *(Requires: [P1-22], [P1-23]; Blocks: [P3-14], [P9-01], [P14-03])*
-- [ ] **[P1-18]** Add validation on telemetry ingest: reject payloads with coordinates outside valid geographic bounds, implausible altitudes, RSSI values outside sensor range, unrecognised band identifiers, or `captured_at` exceeding a configurable staleness threshold. Return structured error codes the device SDK can interpret and log. *(Requires: [P1-17])*
-- [ ] **[P1-19]** Add spatial and timestamp indexes to `NodeSnapshot` and a composite index on `RadioReading (snapshot_id, radio_id, band)`. Profile a time-range query across 10k snapshots and confirm latency is within an acceptable threshold before Phase 9 begins. *(Requires: [P1-22], [P1-23])*
+- [x] **[P1-17]** Extend the telemetry ingest endpoint to accept batched submissions — an array of snapshots each with their `RadioReading` records — so devices can flush their offline buffer after link recovery, preserving original `captured_at` timestamps. *(Requires: [P1-22], [P1-23]; Blocks: [P3-14], [P9-01], [P14-03])*
+- [x] **[P1-18]** Add validation on telemetry ingest: reject payloads with coordinates outside valid geographic bounds, implausible altitudes, RSSI values outside sensor range, unrecognised band identifiers, or `captured_at` exceeding a configurable staleness threshold. Return structured error codes the device SDK can interpret and log. *(Requires: [P1-17])*
+- [x] **[P1-19]** Add spatial and timestamp indexes to `NodeSnapshot` and a composite index on `RadioReading (snapshot_id, radio_id, band)`. Profile a time-range query across 10k snapshots and confirm latency is within an acceptable threshold before Phase 9 begins. *(Requires: [P1-22], [P1-23])*
 
 ## API Layer
 
