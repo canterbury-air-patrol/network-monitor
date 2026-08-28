@@ -6,9 +6,10 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import { useMemo } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
+import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
 import type { NodeSnapshotResponse, PaginatedResponse } from '../types'
-import HeatmapLayer, { rssiToIntensity } from './HeatmapLayer'
+import HeatmapLayer from './HeatmapLayer'
 
 // Vite hashes assets, breaking Leaflet's default icon auto-detection
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })

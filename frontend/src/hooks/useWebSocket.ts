@@ -30,6 +30,10 @@ export function useWebSocket(url: string, options: UseWebSocketOptions) {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
 
+  // Reconnect dispatches through a ref so the scheduled retry always calls the
+  // latest connect without connect having to reference itself.
+  const connectRef = useRef<() => void>(() => {})
+
   const connect = useCallback(() => {
     const ws = new WebSocket(url)
     wsRef.current = ws
@@ -39,11 +43,18 @@ export function useWebSocket(url: string, options: UseWebSocketOptions) {
     ws.onclose = (event) => {
       onCloseRef.current?.(event)
       if (mountedRef.current) {
-        reconnectTimerRef.current = setTimeout(connect, reconnectDelay)
+        reconnectTimerRef.current = setTimeout(
+          () => connectRef.current(),
+          reconnectDelay,
+        )
       }
     }
     ws.onerror = () => ws.close()
   }, [url, reconnectDelay])
+
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
 
   useEffect(() => {
     mountedRef.current = true
