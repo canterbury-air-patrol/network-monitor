@@ -19,4 +19,11 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Playwright fixtures hand control back through a callback named `use`,
+    // which the React plugin reads as the `use` hook. Nothing under e2e/ is a
+    // React tree.
+    files: ['e2e/**/*.ts'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
 ])
