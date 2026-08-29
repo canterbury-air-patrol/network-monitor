@@ -27,6 +27,12 @@ export interface BackendOptions {
   zoom?: number
   /** Snapshots the map's coverage query returns; empty means no coverage. */
   coverage?: CoverageSnapshot[]
+  /**
+   * Results for any other list endpoint, keyed by a fragment of the request
+   * URL — `'/missions/'`, `'/radios/?node=1'`. The longest matching key wins,
+   * so a key can also answer one query of an endpoint the defaults handle.
+   */
+  lists?: Record<string, unknown[]>
 }
 
 function pageOf(results: unknown[]) {
@@ -45,8 +51,15 @@ function pageOf(results: unknown[]) {
  */
 export async function stubBackend(
   page: Page,
-  { centre = MAP_CENTRE, zoom = MAP_ZOOM, coverage = [] }: BackendOptions = {},
+  {
+    centre = MAP_CENTRE,
+    zoom = MAP_ZOOM,
+    coverage = [],
+    lists = {},
+  }: BackendOptions = {},
 ): Promise<void> {
+  const keys = Object.keys(lists).sort((a, b) => b.length - a.length)
+
   // Tiles are scenery: the assertions are all on marker and canvas geometry,
   // and waiting on openstreetmap.org would make the suite depend on the network
   await page.route('**/tile.openstreetmap.org/**', (route) => route.abort())
@@ -57,6 +70,8 @@ export async function stubBackend(
       return route.fulfill({
         json: { center: centre, zoom, source: 'mission', mission: 1 },
       })
+    const key = keys.find((fragment) => url.includes(fragment))
+    if (key !== undefined) return route.fulfill({ json: pageOf(lists[key]) })
     return route.fulfill({
       json: pageOf(url.includes('/snapshots/') ? coverage : []),
     })

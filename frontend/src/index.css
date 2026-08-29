@@ -14,3 +14,34 @@ body,
   margin: 0;
   padding: 0;
 }
+
+/*
+ * Leaflet's own chrome is drawn for a mouse: 30 px zoom buttons and a 24 px
+ * popup close button. The field UI is operated with gloves, so every control
+ * it draws is padded out to the 44 px floor the rest of the app holds to
+ * ([P3-16]). The selectors match Leaflet's own specificity so the later rule
+ * simply wins.
+ */
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 1.375rem;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  width: 44px;
+  height: 44px;
+  font: 24px/44px Tahoma, Verdana, sans-serif;
+  /* Leaflet's own grey is 4.6:1 on the popup — legible, but only just */
+  color: #475569;
+}
+
+/*
+ * UAV markers are sized to a 44 px touch target rather than the icon's own
+ * 25x41, so the teardrop is letterboxed inside that box instead of stretched.
+ */
+img.leaflet-marker-icon {
+  object-fit: contain;
+}

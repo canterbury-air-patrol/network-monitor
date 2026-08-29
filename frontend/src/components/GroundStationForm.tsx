@@ -48,7 +48,7 @@ function StationFields({
   }
 
   const inputClass =
-    'mt-1 min-h-11 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40'
+    'mt-1 min-h-11 w-full rounded border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400'
 
   return (
     // Leaflet's own controls sit at z-index 1000, so the form has to clear them
@@ -123,7 +123,7 @@ function StationFields({
       <div className="flex gap-2">
         <button
           type="submit"
-          className="bg-accent min-h-11 flex-1 rounded px-3 py-2 text-sm font-medium text-white"
+          className="bg-accent text-primary min-h-11 flex-1 rounded px-3 py-2 text-sm font-medium"
         >
           Save
         </button>

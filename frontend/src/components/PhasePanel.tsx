@@ -42,7 +42,7 @@ export default function PhasePanel({ mission }: { mission: MissionResponse }) {
 
   return (
     <div className="mt-4" data-testid="phase-panel">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
+      <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
         Phases
       </p>
       <p className="text-sm" data-testid="current-phase">
@@ -50,7 +50,7 @@ export default function PhasePanel({ mission }: { mission: MissionResponse }) {
       </p>
 
       {phases.length === 0 ? (
-        <p className="mt-2 text-xs text-white/50" data-testid="no-phases">
+        <p className="mt-2 text-xs text-slate-300" data-testid="no-phases">
           No phases defined for this mission.
         </p>
       ) : (
@@ -65,7 +65,7 @@ export default function PhasePanel({ mission }: { mission: MissionResponse }) {
               <p className="truncate text-sm" title={phase.name}>
                 {phase.name}
               </p>
-              <p className="text-xs text-white/50">{describe(phase)}</p>
+              <p className="text-xs text-slate-300">{describe(phase)}</p>
               {phase.is_active ? (
                 <button
                   type="button"
