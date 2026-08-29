@@ -83,3 +83,11 @@ export interface MissionPhaseResponse {
   ended_at: string | null
   is_active: boolean
 }
+
+export interface MapViewResponse {
+  center: { latitude: number; longitude: number }
+  zoom: number
+  /** "mission" when an active mission's override contributed part of the view. */
+  source: 'default' | 'mission'
+  mission: number | null
+}

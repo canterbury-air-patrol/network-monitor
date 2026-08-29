@@ -4,15 +4,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MapArea from '../MapArea'
 import { useMapStore } from '../../store'
 import { renderWithQuery } from '../../test/query'
-import type { NodeSnapshotResponse } from '../../types'
+import type { MapViewResponse, NodeSnapshotResponse } from '../../types'
+
+const setView = vi.fn()
 
 // react-leaflet needs a live map context; what matters here is which layers
-// survive a crash in one of their siblings.
+// survive a crash in one of their siblings, and where the map gets centred.
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }: { children?: ReactNode }) => (
-    <div data-testid="map-container">{children}</div>
+  MapContainer: ({
+    children,
+    center,
+    zoom,
+  }: {
+    children?: ReactNode
+    center: [number, number]
+    zoom: number
+  }) => (
+    <div
+      data-testid="map-container"
+      data-center={center.join(',')}
+      data-zoom={zoom}
+    >
+      {children}
+    </div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
+  useMap: () => ({ setView }),
 }))
 
 vi.mock('../HeatmapLayer', () => ({
@@ -52,8 +69,31 @@ const SNAPSHOT: NodeSnapshotResponse = {
   ],
 }
 
+const DEFAULT_VIEW: MapViewResponse = {
+  center: { latitude: -41.3, longitude: 174.8 },
+  zoom: 12,
+  source: 'default',
+  mission: null,
+}
+
+const MISSION_VIEW: MapViewResponse = {
+  center: { latitude: -45.03, longitude: 168.66 },
+  zoom: 14,
+  source: 'mission',
+  mission: 7,
+}
+
+/** Swapped by a test to model the server resolving a different view. */
+let mapView: MapViewResponse = DEFAULT_VIEW
+
+function jsonResponse(body: unknown): Promise<Response> {
+  return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }))
+}
+
 beforeEach(() => {
   localStorage.clear()
+  mapView = DEFAULT_VIEW
+  setView.mockClear()
   useMapStore.setState({
     showUAVOverlay: true,
     pinningMode: false,
@@ -63,19 +103,15 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.stubGlobal(
     'fetch',
-    vi.fn(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify({
-            count: 1,
-            next: null,
-            previous: null,
-            results: [SNAPSHOT],
-          }),
-          { status: 200 },
-        ),
-      ),
-    ),
+    vi.fn((input: RequestInfo | URL) => {
+      if (String(input).includes('/settings/map/')) return jsonResponse(mapView)
+      return jsonResponse({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [SNAPSHOT],
+      })
+    }),
   )
 })
 
@@ -113,5 +149,58 @@ describe('MapArea layer isolation', () => {
 
     expect(screen.queryByTestId('map-degraded')).not.toBeInTheDocument()
     expect(screen.getByTestId('heatmap')).toBeInTheDocument()
+  })
+})
+
+describe('MapArea initial view', () => {
+  it('centres on the view the settings endpoint resolves', async () => {
+    renderWithQuery(<MapArea />)
+
+    await waitFor(() =>
+      expect(setView).toHaveBeenCalledWith([-41.3, 174.8], 12),
+    )
+  })
+
+  it('snaps to a mission override once the mission goes active', async () => {
+    const { queryClient } = renderWithQuery(<MapArea />)
+    await waitFor(() => expect(setView).toHaveBeenCalledTimes(1))
+
+    mapView = MISSION_VIEW
+    await act(() => queryClient.invalidateQueries({ queryKey: ['map-view'] }))
+
+    await waitFor(() =>
+      expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14),
+    )
+  })
+
+  it('leaves a panned map alone when a refetch resolves the same view', async () => {
+    const { queryClient } = renderWithQuery(<MapArea />)
+    await waitFor(() => expect(setView).toHaveBeenCalledTimes(1))
+
+    await act(() => queryClient.invalidateQueries({ queryKey: ['map-view'] }))
+
+    expect(setView).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to the built-in view when the endpoint is unusable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        if (String(input).includes('/settings/map/'))
+          return jsonResponse({ center: null })
+        return jsonResponse({
+          count: 0,
+          next: null,
+          previous: null,
+          results: [],
+        })
+      }),
+    )
+    renderWithQuery(<MapArea />)
+
+    const container = await screen.findByTestId('map-container')
+    expect(container).toHaveAttribute('data-center', '-43.5,172.5')
+    expect(container).toHaveAttribute('data-zoom', '10')
+    expect(setView).not.toHaveBeenCalled()
   })
 })

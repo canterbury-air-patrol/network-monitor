@@ -17,8 +17,46 @@ _RSSI_MAX = 0
 class MissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mission
-        fields = ["id", "name", "operator_notes", "status", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "operator_notes",
+            "status",
+            "created_at",
+            "updated_at",
+            "map_latitude",
+            "map_longitude",
+            "map_zoom",
+        ]
         read_only_fields = ["id", "status", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        # Reject half a centre here so the caller gets a field error rather
+        # than the database's check-constraint IntegrityError.
+        latitude = attrs.get("map_latitude")
+        longitude = attrs.get("map_longitude")
+        if (latitude is None) != (longitude is None):
+            raise serializers.ValidationError({"map_latitude": "map_latitude and map_longitude must be set together."})
+        return attrs
+
+
+class MapCenterSerializer(serializers.Serializer):
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+
+
+class MapViewSerializer(serializers.Serializer):
+    """The viewport a client opens on, and where it came from.
+
+    `source` is "mission" when an active mission contributed any part of the
+    view, which is what lets the frontend tell a mission snap apart from an
+    ordinary refetch of the deployment default.
+    """
+
+    center = MapCenterSerializer()
+    zoom = serializers.IntegerField()
+    source = serializers.ChoiceField(choices=["default", "mission"])
+    mission = serializers.IntegerField(allow_null=True)
 
 
 class MissionPhaseSerializer(serializers.ModelSerializer):

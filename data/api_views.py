@@ -6,8 +6,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading
+from .models import Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading, resolve_map_view
 from .serializers import (
+    MapViewSerializer,
     MissionPhaseSerializer,
     MissionSerializer,
     NodeSerializer,
@@ -16,6 +17,14 @@ from .serializers import (
     RadioReadingSerializer,
     RadioSerializer,
 )
+
+
+class MapSettingsView(APIView):
+    """The initial map viewport: the deployment default, overridden by the
+    active mission's area of operation when it has one."""
+
+    def get(self, request):
+        return Response(MapViewSerializer(resolve_map_view()).data)
 
 
 class MissionViewSet(viewsets.ModelViewSet):

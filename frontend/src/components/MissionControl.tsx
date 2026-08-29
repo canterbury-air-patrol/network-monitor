@@ -53,6 +53,9 @@ export default function MissionControl() {
     onSuccess: () => {
       setError(null)
       void queryClient.invalidateQueries({ queryKey: ['missions'] })
+      // A mission going active may carry a viewport override; refresh it now
+      // rather than leaving the map on the old area until the next poll.
+      void queryClient.invalidateQueries({ queryKey: ['map-view'] })
     },
     onError: (err: Error) => setError(err.message),
   })
