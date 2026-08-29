@@ -21,7 +21,7 @@ vi.mock('react-leaflet', () => ({
     <div
       data-testid="marker"
       data-position={position.join(',')}
-      data-icon={icon?.options.className ?? 'default'}
+      data-icon={icon?.options.className || 'default'}
     >
       {children}
     </div>

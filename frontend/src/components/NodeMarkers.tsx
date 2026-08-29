@@ -23,6 +23,12 @@ function staleIcon(state: 'degraded' | 'lost', tone: string) {
   })
 }
 
+// react-leaflet passes its props straight to Leaflet as marker options, and an
+// explicit `icon: undefined` overwrites Marker's own default rather than
+// leaving it in place — which throws as soon as the marker is added to the map
+// — so a live node names the default icon itself.
+const LIVE_ICON = new L.Icon.Default()
+
 const STALE_ICONS: Record<'degraded' | 'lost', L.DivIcon> = {
   degraded: staleIcon('degraded', 'bg-amber-400 text-black'),
   lost: staleIcon('lost', 'bg-slate-400 text-slate-900 opacity-80'),
@@ -42,7 +48,7 @@ function NodeMarker({ node, now }: { node: NodeInfo; now: number }) {
   return (
     <Marker
       position={[node.latitude, node.longitude]}
-      icon={state === 'live' ? undefined : STALE_ICONS[state]}
+      icon={state === 'live' ? LIVE_ICON : STALE_ICONS[state]}
     >
       {state !== 'live' && (
         <Tooltip
