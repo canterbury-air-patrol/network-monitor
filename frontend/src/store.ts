@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { ManualGroundStation, NodeInfo } from './types'
+import { persist } from 'zustand/middleware'
+import type { ManualGroundStation, NodeInfo, PendingPin } from './types'
 
 interface MapState {
   nodes: Record<number, NodeInfo>
@@ -9,7 +10,14 @@ interface MapState {
 
   manualGroundStations: Record<number, ManualGroundStation>
   pinningMode: boolean
+  /** Coordinates captured from a map click, awaiting name/altitude confirmation. */
+  pendingPin: PendingPin | null
   _nextGsId: number
+  setPinningMode: (on: boolean) => void
+  togglePinningMode: () => void
+  startPin: (latitude: number, longitude: number) => void
+  cancelPin: () => void
+  confirmPin: (name: string, altitudeM: number) => void
   addGroundStation: (
     name: string,
     latitude: number,
@@ -19,51 +27,88 @@ interface MapState {
   removeGroundStation: (id: number) => void
   updateGroundStation: (
     id: number,
-    updates: Partial<Pick<ManualGroundStation, 'name' | 'altitudeM'>>,
+    updates: Partial<Omit<ManualGroundStation, 'id'>>,
   ) => void
-  togglePinningMode: () => void
 }
 
-export const useMapStore = create<MapState>((set) => ({
-  nodes: {},
-  showUAVOverlay: false,
-  upsertNode: (info) =>
-    set((state) => ({ nodes: { ...state.nodes, [info.nodeId]: info } })),
-  toggleUAVOverlay: () =>
-    set((state) => ({ showUAVOverlay: !state.showUAVOverlay })),
+/** Ground stations are operator-entered, so they survive a reload until a backend endpoint exists. */
+const STORAGE_KEY = 'network-monitor-ground-stations'
 
-  manualGroundStations: {},
-  pinningMode: false,
-  _nextGsId: 1,
-  addGroundStation: (name, latitude, longitude, altitudeM) =>
-    set((state) => {
-      const id = state._nextGsId
-      return {
-        manualGroundStations: {
-          ...state.manualGroundStations,
-          [id]: { id, name, latitude, longitude, altitudeM },
-        },
-        _nextGsId: id + 1,
-        pinningMode: false,
-      }
+export const useMapStore = create<MapState>()(
+  persist(
+    (set) => ({
+      nodes: {},
+      showUAVOverlay: false,
+      upsertNode: (info) =>
+        set((state) => ({ nodes: { ...state.nodes, [info.nodeId]: info } })),
+      toggleUAVOverlay: () =>
+        set((state) => ({ showUAVOverlay: !state.showUAVOverlay })),
+
+      manualGroundStations: {},
+      pinningMode: false,
+      pendingPin: null,
+      _nextGsId: 1,
+      // Leaving the mode discards a pin the operator never confirmed
+      setPinningMode: (on) => set({ pinningMode: on, pendingPin: null }),
+      togglePinningMode: () =>
+        set((state) => ({ pinningMode: !state.pinningMode, pendingPin: null })),
+      // Clicks outside the mode are ordinary map interaction, not pin placement
+      startPin: (latitude, longitude) =>
+        set((state) =>
+          state.pinningMode ? { pendingPin: { latitude, longitude } } : {},
+        ),
+      cancelPin: () => set({ pendingPin: null }),
+      confirmPin: (name, altitudeM) =>
+        set((state) => {
+          const pin = state.pendingPin
+          if (!pin) return {}
+          const id = state._nextGsId
+          return {
+            manualGroundStations: {
+              ...state.manualGroundStations,
+              [id]: { id, name, ...pin, altitudeM },
+            },
+            _nextGsId: id + 1,
+            pendingPin: null,
+            pinningMode: false,
+          }
+        }),
+      addGroundStation: (name, latitude, longitude, altitudeM) =>
+        set((state) => {
+          const id = state._nextGsId
+          return {
+            manualGroundStations: {
+              ...state.manualGroundStations,
+              [id]: { id, name, latitude, longitude, altitudeM },
+            },
+            _nextGsId: id + 1,
+          }
+        }),
+      removeGroundStation: (id) =>
+        set((state) => {
+          const next = { ...state.manualGroundStations }
+          delete next[id]
+          return { manualGroundStations: next }
+        }),
+      updateGroundStation: (id, updates) =>
+        set((state) => {
+          const existing = state.manualGroundStations[id]
+          if (!existing) return {}
+          return {
+            manualGroundStations: {
+              ...state.manualGroundStations,
+              [id]: { ...existing, ...updates },
+            },
+          }
+        }),
     }),
-  removeGroundStation: (id) =>
-    set((state) => {
-      const next = { ...state.manualGroundStations }
-      delete next[id]
-      return { manualGroundStations: next }
-    }),
-  updateGroundStation: (id, updates) =>
-    set((state) => {
-      const existing = state.manualGroundStations[id]
-      if (!existing) return {}
-      return {
-        manualGroundStations: {
-          ...state.manualGroundStations,
-          [id]: { ...existing, ...updates },
-        },
-      }
-    }),
-  togglePinningMode: () =>
-    set((state) => ({ pinningMode: !state.pinningMode })),
-}))
+    {
+      name: STORAGE_KEY,
+      // Live telemetry and in-flight pinning state are deliberately not persisted
+      partialize: (state) => ({
+        manualGroundStations: state.manualGroundStations,
+        _nextGsId: state._nextGsId,
+      }),
+    },
+  ),
+)

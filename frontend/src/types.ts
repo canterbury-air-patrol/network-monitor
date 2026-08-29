@@ -51,3 +51,8 @@ export interface ManualGroundStation {
   longitude: number
   altitudeM: number
 }
+
+export interface PendingPin {
+  latitude: number
+  longitude: number
+}
