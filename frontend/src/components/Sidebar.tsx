@@ -2,12 +2,15 @@ import { useShallow } from 'zustand/react/shallow'
 import { useMapStore } from '../store'
 
 export default function Sidebar() {
-  const { showUAVOverlay, toggleUAVOverlay } = useMapStore(
-    useShallow((s) => ({
-      showUAVOverlay: s.showUAVOverlay,
-      toggleUAVOverlay: s.toggleUAVOverlay,
-    })),
-  )
+  const { showUAVOverlay, toggleUAVOverlay, pinningMode, togglePinningMode } =
+    useMapStore(
+      useShallow((s) => ({
+        showUAVOverlay: s.showUAVOverlay,
+        toggleUAVOverlay: s.toggleUAVOverlay,
+        pinningMode: s.pinningMode,
+        togglePinningMode: s.togglePinningMode,
+      })),
+    )
 
   return (
     <aside
@@ -30,6 +33,29 @@ export default function Sidebar() {
           />
           UAV positions
         </label>
+      </div>
+      <div className="border-t border-white/10 p-4">
+        <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
+          Ground Stations
+        </p>
+        <button
+          type="button"
+          onClick={togglePinningMode}
+          aria-pressed={pinningMode}
+          data-testid="pinning-mode-toggle"
+          className={`min-h-11 w-full rounded px-3 py-2 text-sm font-medium ${
+            pinningMode
+              ? 'bg-accent text-white'
+              : 'bg-white/10 text-white hover:bg-white/20'
+          }`}
+        >
+          {pinningMode ? 'Cancel pinning' : 'Pin ground station'}
+        </button>
+        {pinningMode && (
+          <p className="mt-2 text-xs text-white/60">
+            Click the map to place a ground station.
+          </p>
+        )}
       </div>
     </aside>
   )

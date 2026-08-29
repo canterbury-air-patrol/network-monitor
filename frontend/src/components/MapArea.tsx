@@ -10,6 +10,7 @@ import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
 import type { NodeSnapshotResponse, PaginatedResponse } from '../types'
 import HeatmapLayer from './HeatmapLayer'
+import PinCapture from './PinCapture'
 
 // Vite hashes assets, breaking Leaflet's default icon auto-detection
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
@@ -29,8 +30,12 @@ async function fetchSnapshots({
 }
 
 export default function MapArea() {
-  const { nodes, showUAVOverlay } = useMapStore(
-    useShallow((s) => ({ nodes: s.nodes, showUAVOverlay: s.showUAVOverlay })),
+  const { nodes, showUAVOverlay, pinningMode } = useMapStore(
+    useShallow((s) => ({
+      nodes: s.nodes,
+      showUAVOverlay: s.showUAVOverlay,
+      pinningMode: s.pinningMode,
+    })),
   )
 
   const { data: snapshots = [] } = useQuery({
@@ -59,13 +64,14 @@ export default function MapArea() {
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
-        className="h-full w-full"
+        className={`h-full w-full ${pinningMode ? 'cursor-crosshair!' : ''}`}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <HeatmapLayer points={heatPoints} />
+        <PinCapture />
         {showUAVOverlay &&
           Object.values(nodes).map((node) => (
             <Marker
