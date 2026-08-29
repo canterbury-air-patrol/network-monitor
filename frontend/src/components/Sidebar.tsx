@@ -27,21 +27,23 @@ export default function Sidebar() {
         <MissionControl />
       </ErrorBoundary>
       <div className="border-t border-white/10 p-4">
-        <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
+        <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
           Layers
         </p>
-        <label className="flex cursor-pointer items-center gap-2 text-sm">
+        {/* The label is the checkbox's target too, so the row — not the box —
+            is what has to clear 44 px for a gloved finger ([P3-16]). */}
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
           <input
             type="checkbox"
             checked={showUAVOverlay}
             onChange={toggleUAVOverlay}
-            className="accent-accent"
+            className="accent-accent h-6 w-6"
           />
           UAV positions
         </label>
       </div>
       <div className="border-t border-white/10 p-4">
-        <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
+        <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
           Ground Stations
         </p>
         <button
@@ -51,7 +53,7 @@ export default function Sidebar() {
           data-testid="pinning-mode-toggle"
           className={`min-h-11 w-full rounded px-3 py-2 text-sm font-medium ${
             pinningMode
-              ? 'bg-accent text-white'
+              ? 'bg-accent text-primary'
               : 'bg-white/10 text-white hover:bg-white/20'
           }`}
         >

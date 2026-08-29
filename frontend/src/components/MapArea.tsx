@@ -34,7 +34,12 @@ import HeatmapLayer from './HeatmapLayer'
 import NodeMarkers from './NodeMarkers'
 import PinCapture from './PinCapture'
 
-// Vite hashes assets, breaking Leaflet's default icon auto-detection
+// Vite hashes assets, breaking Leaflet's default icon auto-detection. Naming
+// the hashed URLs is only half the fix: `Icon.Default` prepends a path it
+// sniffs out of leaflet.css to whatever it is given, so the hashed URL comes
+// back doubled and the marker renders as a broken image with its alt text.
+// Pinning the prefix to empty leaves the imported URLs to stand alone.
+L.Icon.Default.imagePath = ''
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
 
 interface OverlayProps {

@@ -13,13 +13,17 @@ import type { NodeInfo } from '../types'
 // A node that is still reporting keeps Leaflet's default teardrop; the stale
 // states get a flat glyph that reads at a glance in daylight — amber warning
 // for a link going intermittent, grey for one that has gone silent entirely.
+//
+// Leaflet takes the marker's clickable box from `iconSize`, so the glyph is
+// centred inside a 44 px box rather than drawn at 44 px: the target is glove
+// sized ([P3-16]) while the marker still points at a position precisely.
 function staleIcon(state: 'degraded' | 'lost', tone: string) {
   return L.divIcon({
     className: `node-marker node-marker--${state}`,
-    html: `<div class="flex h-7 w-7 items-center justify-center rounded-full ${tone} text-sm shadow">&#9888;</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
+    html: `<div class="flex h-11 w-11 items-center justify-center"><div class="flex h-7 w-7 items-center justify-center rounded-full ${tone} text-sm shadow">&#9888;</div></div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -22],
   })
 }
 
@@ -27,7 +31,18 @@ function staleIcon(state: 'degraded' | 'lost', tone: string) {
 // explicit `icon: undefined` overwrites Marker's own default rather than
 // leaving it in place — which throws as soon as the marker is added to the map
 // — so a live node names the default icon itself.
-const LIVE_ICON = new L.Icon.Default()
+//
+// The default is 25x41, under the 44 px touch minimum, so the box is squared
+// off to 44 and `object-fit: contain` letterboxes the teardrop inside it
+// instead of stretching it. Everything is anchored at the tip, which stays the
+// bottom centre of the box; the shadow is scaled by the same 44/41.
+const LIVE_ICON = new L.Icon.Default({
+  iconSize: [44, 44],
+  iconAnchor: [22, 44],
+  popupAnchor: [0, -44],
+  shadowSize: [44, 44],
+  shadowAnchor: [13, 44],
+})
 
 const STALE_ICONS: Record<'degraded' | 'lost', L.DivIcon> = {
   degraded: staleIcon('degraded', 'bg-amber-400 text-black'),

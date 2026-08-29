@@ -74,7 +74,7 @@ export default function MissionControl() {
       className="border-t border-white/10 p-4"
       data-testid="mission-control"
     >
-      <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
+      <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
         Mission
       </p>
 
@@ -96,7 +96,7 @@ export default function MissionControl() {
       </p>
 
       {isPending ? null : selected === null ? (
-        <p className="mt-3 text-xs text-white/50" data-testid="no-missions">
+        <p className="mt-3 text-xs text-slate-300" data-testid="no-missions">
           No missions yet — create one in the admin.
         </p>
       ) : (

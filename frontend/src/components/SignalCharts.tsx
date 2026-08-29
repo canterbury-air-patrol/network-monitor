@@ -49,7 +49,7 @@ function SeriesLegend({ series, hidden, onToggle }: LegendProps) {
             onClick={() => onToggle(s.key)}
             aria-pressed={visible}
             className={`flex min-h-11 items-center gap-2 rounded px-2 text-xs ${
-              visible ? 'text-white' : 'text-white/40'
+              visible ? 'text-white' : 'text-slate-400'
             } hover:bg-white/10`}
           >
             <span

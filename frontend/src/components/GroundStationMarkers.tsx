@@ -6,18 +6,22 @@ import type { ManualGroundStation } from '../types'
 
 // Ground stations are fixed infrastructure, so they get a mast glyph rather
 // than Leaflet's default teardrop, which the UAV overlay already uses.
+//
+// The glyph stays 24 px — a station has to be placed precisely — but Leaflet
+// sizes the clickable box from `iconSize`, so it is centred in a 44 px target
+// that a gloved finger can hit ([P3-16]).
 function mastIcon(className: string) {
   return L.divIcon({
     className: '',
-    html: `<div class="${className}">&#9650;</div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 20],
-    popupAnchor: [0, -20],
+    html: `<div class="flex h-11 w-11 items-center justify-center"><div class="${className}">&#9650;</div></div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 30],
+    popupAnchor: [0, -30],
   })
 }
 
 const STATION_ICON = mastIcon(
-  'flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs text-white shadow',
+  'flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs text-primary shadow',
 )
 const PENDING_ICON = mastIcon(
   'flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs text-primary shadow ring-2 ring-accent',

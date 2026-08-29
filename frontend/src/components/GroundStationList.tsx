@@ -16,7 +16,7 @@ export default function GroundStationList() {
 
   if (list.length === 0) {
     return (
-      <p className="mt-3 text-xs text-white/50" data-testid="no-stations">
+      <p className="mt-3 text-xs text-slate-300" data-testid="no-stations">
         No ground stations pinned.
       </p>
     )
@@ -34,7 +34,7 @@ export default function GroundStationList() {
           <p className="truncate text-sm" title={station.name}>
             {station.name}
           </p>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-slate-300">
             {station.altitudeM.toFixed(0)} m &middot;{' '}
             {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
           </p>
@@ -51,7 +51,7 @@ export default function GroundStationList() {
               type="button"
               onClick={() => removeGroundStation(station.id)}
               aria-label={`Remove ${station.name}`}
-              className="min-h-11 flex-1 rounded bg-white/10 px-2 text-sm text-red-300 hover:bg-white/20"
+              className="min-h-11 flex-1 rounded bg-white/10 px-2 text-sm text-red-200 hover:bg-white/20"
             >
               Remove
             </button>
