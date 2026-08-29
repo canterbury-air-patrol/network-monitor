@@ -12,7 +12,7 @@
 - [ ] **[P10-02]** Define configurable coverage adequacy thresholds per site: minimum RSSI per band, grid resolution for analysis. Stored in the backend, editable per site. *(Requires: [P10-01])*
 - [ ] **[P10-03]** Implement coverage gap overlay as the primary map layer: render uncovered grid cells as a visually distinct highlight. This layer should be on by default and take visual precedence over all other overlays. *(Requires: [P10-01]; Referenced by: [P13-03])*
 - [ ] **[P10-04]** Re-run coverage gap analysis automatically when the ground station network changes (station goes offline, antenna parameters updated, new station added). Push updated gap geometry to connected clients via WebSocket. *(Requires: [P10-01])*
-- [ ] **[P10-05]** Add a persistent alert panel and Toast notifications for new or expanding coverage gaps, reporting which area and which bands are affected. *(Requires: [P10-03]; Referenced by: [P13-03])*
+- [ ] **[P10-05]** Add a persistent alert panel and Toast notifications for new or expanding coverage gaps, reporting which area and which bands are affected. Wrap the panel in the `ErrorBoundary` from [P3-18] so an alert-rendering crash cannot take the coverage display with it. *(Requires: [P10-03], [P3-18]; Referenced by: [P13-03])*
 
 ## Per-UAV Signal Trend Analysis (Secondary)
 
