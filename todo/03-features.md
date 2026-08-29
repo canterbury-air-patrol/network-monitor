@@ -12,7 +12,7 @@
 - [x] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
 - [x] **[P3-03]** Implement "Manual Pinning" mode for ground stations (frontend state management).
 - [x] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
-- [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). *(Requires: [P3-01])*
+- [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). Wrap the panel in the `ErrorBoundary` from [P3-18]. *(Requires: [P3-01], [P3-18])*
 - [ ] **[P3-06]** Write Playwright E2E tests for UAV marker placement and movement. *(Requires: [P3-01])*
 - [ ] **[P3-07]** Write Playwright E2E tests for heatmap visibility. *(Requires: [P3-02])*
 
@@ -33,7 +33,7 @@
 
 - [x] **[P3-15]** Create a Python script to simulate a UAV flight path with configurable RadioReading values per radio/band/ground station for development and field testing. *(Referenced by: [P10-11], [P14-07])*
 - [ ] **[P3-16]** Perform a "High-Glare" UI audit: verify all interactive elements meet WCAG AA contrast ratios and are operable with gloves (minimum 44 px touch targets). *(Referenced by: [P13-06])*
-- [ ] **[P3-18]** Wrap each major UI panel (Map, Sidebar, MissionControl, AlertPanel, SignalCharts) in a React `ErrorBoundary`. A crash in any one panel must show a contained fallback without affecting the others. The map layer displaying coverage gaps must remain functional even if all other panels fail.
+- [x] **[P3-18]** Wrap each major UI panel (Map, Sidebar, MissionControl, AlertPanel, SignalCharts) in a React `ErrorBoundary`. A crash in any one panel must show a contained fallback without affecting the others. The map layer displaying coverage gaps must remain functional even if all other panels fail. *(Done for the panels that exist: Map, Sidebar, MissionControl, the ground-station roster/form, and each map layer individually. SignalCharts ([P3-05]) and the AlertPanel ([P10-05]) must be wrapped in `ErrorBoundary` as they land.)*
 
 ## Unit Preferences
 

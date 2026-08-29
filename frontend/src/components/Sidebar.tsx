@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useMapStore } from '../store'
+import ErrorBoundary from './ErrorBoundary'
 import GroundStationList from './GroundStationList'
 import MissionControl from './MissionControl'
 
@@ -22,7 +23,9 @@ export default function Sidebar() {
       <div className="p-4 text-lg font-semibold tracking-wide">
         Network Monitor
       </div>
-      <MissionControl />
+      <ErrorBoundary label="Mission control">
+        <MissionControl />
+      </ErrorBoundary>
       <div className="border-t border-white/10 p-4">
         <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
           Layers
@@ -59,7 +62,9 @@ export default function Sidebar() {
             Click the map to place a ground station.
           </p>
         )}
-        <GroundStationList />
+        <ErrorBoundary label="Ground stations">
+          <GroundStationList />
+        </ErrorBoundary>
       </div>
     </aside>
   )
