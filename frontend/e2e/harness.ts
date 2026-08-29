@@ -15,11 +15,28 @@ export interface Coordinates {
 export const MAP_CENTRE: Coordinates = { latitude: -43.53, longitude: 172.62 }
 export const MAP_ZOOM = 13
 
-const EMPTY_PAGE = { count: 0, next: null, previous: null, results: [] }
+/** A stored snapshot as the coverage heatmap reads it ([P3-02]). */
+export interface CoverageSnapshot {
+  position: Coordinates & { altitude: number }
+  /** One heat point is drawn per reading, all at the snapshot's position. */
+  radio_readings: { rssi_dbm: number }[]
+}
+
+export interface BackendOptions {
+  centre?: Coordinates
+  zoom?: number
+  /** Snapshots the map's coverage query returns; empty means no coverage. */
+  coverage?: CoverageSnapshot[]
+}
+
+function pageOf(results: unknown[]) {
+  return { count: results.length, next: null, previous: null, results }
+}
 
 /**
  * Serve the REST surface the app reads on load, so what the map shows depends
- * only on what a test pushes over the telemetry socket.
+ * only on the coverage served here and what a test pushes over the telemetry
+ * socket.
  *
  * The viewport is served as a mission override because that is the one source
  * `resolveInitialView` applies immediately — a plain default waits out the
@@ -28,20 +45,21 @@ const EMPTY_PAGE = { count: 0, next: null, previous: null, results: [] }
  */
 export async function stubBackend(
   page: Page,
-  view: { centre?: Coordinates; zoom?: number } = {},
+  { centre = MAP_CENTRE, zoom = MAP_ZOOM, coverage = [] }: BackendOptions = {},
 ): Promise<void> {
-  const centre = view.centre ?? MAP_CENTRE
-  const zoom = view.zoom ?? MAP_ZOOM
-
-  // Tiles are scenery: the assertions are all on marker geometry, and waiting
-  // on openstreetmap.org would make the suite depend on the network
+  // Tiles are scenery: the assertions are all on marker and canvas geometry,
+  // and waiting on openstreetmap.org would make the suite depend on the network
   await page.route('**/tile.openstreetmap.org/**', (route) => route.abort())
 
   await page.route('**/api/v1/**', (route) => {
-    const json = route.request().url().includes('/settings/map/')
-      ? { center: centre, zoom, source: 'mission', mission: 1 }
-      : EMPTY_PAGE
-    return route.fulfill({ json })
+    const url = route.request().url()
+    if (url.includes('/settings/map/'))
+      return route.fulfill({
+        json: { center: centre, zoom, source: 'mission', mission: 1 },
+      })
+    return route.fulfill({
+      json: pageOf(url.includes('/snapshots/') ? coverage : []),
+    })
   })
 }
 
@@ -136,17 +154,70 @@ export function pixelsApart(a: Point, b: Point): number {
 }
 
 /**
- * A loaded map with a stubbed backend and the telemetry socket in the test's
- * hands. The fixture navigates, so anything that must be in place before the
- * app opens its socket belongs here rather than in a test body.
+ * The coverage heatmap ([P3-02]). `leaflet.heat` paints one canvas over the
+ * whole map pane, so the layer being on screen says nothing about what it
+ * drew — read the pixels for that.
  */
+export function heatLayer(page: Page): Locator {
+  return page.locator('canvas.leaflet-heatmap-layer')
+}
+
+export interface Pixel {
+  red: number
+  green: number
+  blue: number
+  /** 0 where the layer painted nothing. */
+  alpha: number
+}
+
+/**
+ * What the coverage layer painted at a viewport point. Reading the canvas
+ * rather than a screenshot keeps the answer independent of the tiles and of
+ * any marker drawn over the top.
+ */
+export async function heatPixel(page: Page, point: Point): Promise<Pixel> {
+  return page.evaluate(({ x, y }) => {
+    const canvas = document.querySelector<HTMLCanvasElement>(
+      'canvas.leaflet-heatmap-layer',
+    )
+    if (!canvas) throw new Error('the map has no coverage layer')
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('the coverage layer has no 2d context')
+
+    // The canvas is sized in CSS pixels and untransformed, but scale anyway so
+    // the reading survives a device pixel ratio other than 1
+    const box = canvas.getBoundingClientRect()
+    const px = Math.round(((x - box.left) * canvas.width) / box.width)
+    const py = Math.round(((y - box.top) * canvas.height) / box.height)
+    if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height)
+      throw new Error(`(${x}, ${y}) is outside the coverage layer`)
+
+    const [red, green, blue, alpha] = context.getImageData(px, py, 1, 1).data
+    return { red, green, blue, alpha }
+  }, point)
+}
+
+/**
+ * Load the app onto a stubbed backend with the telemetry socket in the test's
+ * hands. Everything that must be in place before the app opens its socket or
+ * fetches its first coverage happens here, so a test that varies either calls
+ * this itself rather than taking the `telemetry` fixture.
+ */
+export async function loadApp(
+  page: Page,
+  options: BackendOptions = {},
+): Promise<Telemetry> {
+  await stubBackend(page, options)
+  const telemetry = await mockTelemetry(page)
+  await page.goto('/')
+  await expect(page.locator('.leaflet-container')).toBeVisible()
+  return telemetry
+}
+
+/** A loaded map on the default view, serving no coverage. */
 export const test = base.extend<{ telemetry: Telemetry }>({
   telemetry: async ({ page }, use) => {
-    await stubBackend(page)
-    const telemetry = await mockTelemetry(page)
-    await page.goto('/')
-    await expect(page.locator('.leaflet-container')).toBeVisible()
-    await use(telemetry)
+    await use(await loadApp(page))
   },
 })
 
