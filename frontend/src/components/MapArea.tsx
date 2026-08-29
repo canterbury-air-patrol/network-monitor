@@ -9,6 +9,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
 import type { NodeSnapshotResponse, PaginatedResponse } from '../types'
+import GroundStationForm from './GroundStationForm'
+import GroundStationMarkers from './GroundStationMarkers'
 import HeatmapLayer from './HeatmapLayer'
 import PinCapture from './PinCapture'
 
@@ -72,6 +74,7 @@ export default function MapArea() {
         />
         <HeatmapLayer points={heatPoints} />
         <PinCapture />
+        <GroundStationMarkers />
         {showUAVOverlay &&
           Object.values(nodes).map((node) => (
             <Marker
@@ -88,6 +91,7 @@ export default function MapArea() {
             </Marker>
           ))}
       </MapContainer>
+      <GroundStationForm />
     </main>
   )
 }

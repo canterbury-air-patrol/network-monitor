@@ -12,6 +12,8 @@ interface MapState {
   pinningMode: boolean
   /** Coordinates captured from a map click, awaiting name/altitude confirmation. */
   pendingPin: PendingPin | null
+  /** Station open in the edit form. Mutually exclusive with placing a new pin. */
+  editingStationId: number | null
   _nextGsId: number
   setPinningMode: (on: boolean) => void
   togglePinningMode: () => void
@@ -25,6 +27,8 @@ interface MapState {
     altitudeM: number,
   ) => void
   removeGroundStation: (id: number) => void
+  startEditingStation: (id: number) => void
+  stopEditingStation: () => void
   updateGroundStation: (
     id: number,
     updates: Partial<Omit<ManualGroundStation, 'id'>>,
@@ -47,11 +51,18 @@ export const useMapStore = create<MapState>()(
       manualGroundStations: {},
       pinningMode: false,
       pendingPin: null,
+      editingStationId: null,
       _nextGsId: 1,
-      // Leaving the mode discards a pin the operator never confirmed
-      setPinningMode: (on) => set({ pinningMode: on, pendingPin: null }),
+      // Leaving the mode discards a pin the operator never confirmed, and the
+      // form can only describe one station at a time, so editing closes too
+      setPinningMode: (on) =>
+        set({ pinningMode: on, pendingPin: null, editingStationId: null }),
       togglePinningMode: () =>
-        set((state) => ({ pinningMode: !state.pinningMode, pendingPin: null })),
+        set((state) => ({
+          pinningMode: !state.pinningMode,
+          pendingPin: null,
+          editingStationId: null,
+        })),
       // Clicks outside the mode are ordinary map interaction, not pin placement
       startPin: (latitude, longitude) =>
         set((state) =>
@@ -88,8 +99,21 @@ export const useMapStore = create<MapState>()(
         set((state) => {
           const next = { ...state.manualGroundStations }
           delete next[id]
-          return { manualGroundStations: next }
+          return {
+            manualGroundStations: next,
+            // The form has nothing left to edit once its station is gone
+            editingStationId:
+              state.editingStationId === id ? null : state.editingStationId,
+          }
         }),
+      // Editing an existing station abandons any half-placed new pin
+      startEditingStation: (id) =>
+        set((state) =>
+          state.manualGroundStations[id]
+            ? { editingStationId: id, pinningMode: false, pendingPin: null }
+            : {},
+        ),
+      stopEditingStation: () => set({ editingStationId: null }),
       updateGroundStation: (id, updates) =>
         set((state) => {
           const existing = state.manualGroundStations[id]

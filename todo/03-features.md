@@ -11,7 +11,7 @@
 - [ ] **[P3-20]** On first load (or when no saved centre exists), attempt to centre the map on the user's device location via the browser Geolocation API, falling back to the hardcoded default if permission is denied or unavailable. *(Requires: [P3-01])*
 - [x] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
 - [x] **[P3-03]** Implement "Manual Pinning" mode for ground stations (frontend state management).
-- [ ] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
+- [x] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
 - [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). *(Requires: [P3-01])*
 - [ ] **[P3-06]** Write Playwright E2E tests for UAV marker placement and movement. *(Requires: [P3-01])*
 - [ ] **[P3-07]** Write Playwright E2E tests for heatmap visibility. *(Requires: [P3-02])*

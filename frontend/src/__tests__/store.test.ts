@@ -10,6 +10,7 @@ function reset() {
     manualGroundStations: {},
     pinningMode: false,
     pendingPin: null,
+    editingStationId: null,
     _nextGsId: 1,
   })
 }
@@ -160,6 +161,57 @@ describe('ground station collection', () => {
     useMapStore.getState().updateGroundStation(99, { name: 'Ghost' })
 
     expect(useMapStore.getState().manualGroundStations).toEqual({})
+  })
+})
+
+describe('editing a station', () => {
+  it('opens an existing station and closes again', () => {
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 10)
+
+    useMapStore.getState().startEditingStation(1)
+    expect(useMapStore.getState().editingStationId).toBe(1)
+
+    useMapStore.getState().stopEditingStation()
+    expect(useMapStore.getState().editingStationId).toBeNull()
+  })
+
+  it('ignores a station that does not exist', () => {
+    useMapStore.getState().startEditingStation(99)
+
+    expect(useMapStore.getState().editingStationId).toBeNull()
+  })
+
+  it('abandons a half-placed pin', () => {
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 10)
+    useMapStore.getState().setPinningMode(true)
+    useMapStore.getState().startPin(-41.3, 174.8)
+
+    useMapStore.getState().startEditingStation(1)
+
+    const state = useMapStore.getState()
+    expect(state.pendingPin).toBeNull()
+    expect(state.pinningMode).toBe(false)
+  })
+
+  it('closes when pinning mode is entered', () => {
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 10)
+    useMapStore.getState().startEditingStation(1)
+
+    useMapStore.getState().togglePinningMode()
+
+    expect(useMapStore.getState().editingStationId).toBeNull()
+  })
+
+  it('closes when the station being edited is removed', () => {
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 10)
+    useMapStore.getState().addGroundStation('Bravo', -43.6, 172.6, 20)
+    useMapStore.getState().startEditingStation(2)
+
+    useMapStore.getState().removeGroundStation(1)
+    expect(useMapStore.getState().editingStationId).toBe(2)
+
+    useMapStore.getState().removeGroundStation(2)
+    expect(useMapStore.getState().editingStationId).toBeNull()
   })
 })
 
