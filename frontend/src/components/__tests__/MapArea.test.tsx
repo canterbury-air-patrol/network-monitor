@@ -8,6 +8,29 @@ import type { MapViewResponse, NodeSnapshotResponse } from '../../types'
 
 const setView = vi.fn()
 
+/** Leaflet event handlers the map controller has registered. */
+const mapHandlers = new Map<string, Set<() => void>>()
+
+/** Stable across renders, so the controller's listener effect runs once. */
+const fakeMap = {
+  setView,
+  on: (event: string, handler: () => void) => {
+    const set = mapHandlers.get(event) ?? new Set()
+    set.add(handler)
+    mapHandlers.set(event, set)
+  },
+  off: (event: string, handler: () => void) => {
+    mapHandlers.get(event)?.delete(handler)
+  },
+}
+
+/** Models the operator dragging or scroll-zooming the map themselves. */
+function operatorMovesMap(): void {
+  act(() => {
+    mapHandlers.get('dragstart')?.forEach((handler) => handler())
+  })
+}
+
 // react-leaflet needs a live map context; what matters here is which layers
 // survive a crash in one of their siblings, and where the map gets centred.
 vi.mock('react-leaflet', () => ({
@@ -29,7 +52,7 @@ vi.mock('react-leaflet', () => ({
     </div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
-  useMap: () => ({ setView }),
+  useMap: () => fakeMap,
 }))
 
 vi.mock('../HeatmapLayer', () => ({
@@ -86,6 +109,27 @@ const MISSION_VIEW: MapViewResponse = {
 /** Swapped by a test to model the server resolving a different view. */
 let mapView: MapViewResponse = DEFAULT_VIEW
 
+type GeoSuccess = (position: GeolocationPosition) => void
+type GeoFailure = (error: GeolocationPositionError) => void
+
+const getCurrentPosition =
+  vi.fn<(onSuccess: GeoSuccess, onError?: GeoFailure | null) => void>()
+
+/** Installs a browser geolocation API; without this the hook finds none. */
+function withGeolocation(): void {
+  Object.defineProperty(navigator, 'geolocation', {
+    value: { getCurrentPosition },
+    configurable: true,
+  })
+}
+
+function deviceAt(latitude: number, longitude: number): GeolocationPosition {
+  return {
+    coords: { latitude, longitude },
+    timestamp: 0,
+  } as GeolocationPosition
+}
+
 function jsonResponse(body: unknown): Promise<Response> {
   return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }))
 }
@@ -94,6 +138,8 @@ beforeEach(() => {
   localStorage.clear()
   mapView = DEFAULT_VIEW
   setView.mockClear()
+  mapHandlers.clear()
+  getCurrentPosition.mockReset()
   useMapStore.setState({
     showUAVOverlay: true,
     pinningMode: false,
@@ -116,6 +162,11 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
+  Object.defineProperty(navigator, 'geolocation', {
+    value: undefined,
+    configurable: true,
+  })
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -157,7 +208,9 @@ describe('MapArea initial view', () => {
     renderWithQuery(<MapArea />)
 
     await waitFor(() =>
-      expect(setView).toHaveBeenCalledWith([-41.3, 174.8], 12),
+      expect(setView).toHaveBeenCalledWith([-41.3, 174.8], 12, {
+        animate: false,
+      }),
     )
   })
 
@@ -169,7 +222,9 @@ describe('MapArea initial view', () => {
     await act(() => queryClient.invalidateQueries({ queryKey: ['map-view'] }))
 
     await waitFor(() =>
-      expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14),
+      expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14, {
+        animate: false,
+      }),
     )
   })
 
@@ -202,5 +257,109 @@ describe('MapArea initial view', () => {
     expect(container).toHaveAttribute('data-center', '-43.5,172.5')
     expect(container).toHaveAttribute('data-zoom', '10')
     expect(setView).not.toHaveBeenCalled()
+  })
+})
+
+describe('MapArea device location', () => {
+  it('centres on the device, at the zoom the deployment configured', async () => {
+    withGeolocation()
+    getCurrentPosition.mockImplementation((onSuccess) =>
+      onSuccess(deviceAt(-36.85, 174.76)),
+    )
+
+    renderWithQuery(<MapArea />)
+
+    await waitFor(() =>
+      expect(setView).toHaveBeenLastCalledWith([-36.85, 174.76], 12, {
+        animate: false,
+      }),
+    )
+  })
+
+  it('falls back to the server default when permission is refused', async () => {
+    withGeolocation()
+    getCurrentPosition.mockImplementation((_onSuccess, onError) =>
+      onError?.({ code: 1, message: 'denied' } as GeolocationPositionError),
+    )
+
+    renderWithQuery(<MapArea />)
+
+    await waitFor(() =>
+      expect(setView).toHaveBeenCalledWith([-41.3, 174.8], 12, {
+        animate: false,
+      }),
+    )
+    expect(setView).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an active mission ahead of the device location', async () => {
+    mapView = MISSION_VIEW
+    withGeolocation()
+    getCurrentPosition.mockImplementation((onSuccess) =>
+      onSuccess(deviceAt(-36.85, 174.76)),
+    )
+
+    const { queryClient } = renderWithQuery(<MapArea />)
+
+    // The fix lands before the endpoint answers, so the mission has to take
+    // the map off the device rather than merely getting there first.
+    await waitFor(() =>
+      expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14, {
+        animate: false,
+      }),
+    )
+
+    await act(() => queryClient.invalidateQueries({ queryKey: ['map-view'] }))
+    expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14, {
+      animate: false,
+    })
+  })
+
+  it('drops a late fix once the operator has moved the map themselves', async () => {
+    withGeolocation()
+    let grantPermission: GeoSuccess = () => {}
+    getCurrentPosition.mockImplementation((onSuccess) => {
+      grantPermission = onSuccess
+    })
+
+    renderWithQuery(<MapArea />)
+    // Nothing is applied while the permission prompt sits unanswered.
+    await waitFor(() => expect(mapHandlers.get('dragstart')?.size).toBe(1))
+    expect(setView).not.toHaveBeenCalled()
+
+    operatorMovesMap()
+    act(() => grantPermission(deviceAt(-36.85, 174.76)))
+
+    expect(setView).not.toHaveBeenCalled()
+  })
+
+  it('gives up on an unanswered prompt and uses the server default', async () => {
+    vi.useFakeTimers()
+    withGeolocation()
+    getCurrentPosition.mockImplementation(() => {})
+
+    renderWithQuery(<MapArea />)
+    // Waiting on the prompt indefinitely would strand the map on its
+    // built-in view, so the grace period ends the wait.
+    await act(() => vi.advanceTimersByTimeAsync(3000))
+
+    expect(setView).toHaveBeenCalledWith([-41.3, 174.8], 12, {
+      animate: false,
+    })
+  })
+
+  it('still snaps a moved map to a mission that goes active', async () => {
+    const { queryClient } = renderWithQuery(<MapArea />)
+    await waitFor(() => expect(setView).toHaveBeenCalledTimes(1))
+
+    operatorMovesMap()
+    mapView = MISSION_VIEW
+    await act(() => queryClient.invalidateQueries({ queryKey: ['map-view'] }))
+
+    await waitFor(() =>
+      expect(setView).toHaveBeenLastCalledWith([-45.03, 168.66], 14, {
+        animate: false,
+      }),
+    )
   })
 })

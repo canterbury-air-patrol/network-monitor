@@ -13,7 +13,13 @@ import {
 } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
-import { fetchMapView, mapViewKey } from '../api/mapView'
+import { fetchMapView } from '../api/mapView'
+import { useGeolocation } from '../hooks/useGeolocation'
+import {
+  FALLBACK_CENTER,
+  FALLBACK_ZOOM,
+  resolveInitialView,
+} from '../initialView'
 import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
 import type {
@@ -30,10 +36,6 @@ import PinCapture from './PinCapture'
 
 // Vite hashes assets, breaking Leaflet's default icon auto-detection
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
-
-// Used only until the server's configured view arrives, and if it never does.
-const FALLBACK_CENTER: [number, number] = [-43.5, 172.5]
-const FALLBACK_ZOOM = 10
 
 interface OverlayProps {
   label: string
@@ -64,21 +66,43 @@ function MapOverlay({ label, onStatus, children }: OverlayProps) {
 }
 
 /**
- * Applies the server-configured viewport to the live map. Re-centring is keyed
- * on the view itself, so a mission going active snaps the map to its area of
+ * Applies the resolved viewport to the live map. Re-centring is keyed on the
+ * resolved view, so a mission going active snaps the map to its area of
  * operation while ordinary refetches leave the operator's panning alone.
+ *
+ * Movement the operator initiates is recorded so a device fix that lands late
+ * — after they have already dragged the map somewhere deliberate — is dropped
+ * rather than pulling the view out from under them. Our own re-centring is
+ * unanimated, so it raises the same Leaflet events synchronously and is
+ * bracketed out of that record.
  */
 function MapViewController({ view }: { view: MapViewResponse | undefined }) {
   const map = useMap()
+  const geo = useGeolocation()
   const appliedKey = useRef<string | null>(null)
+  const operatorMoved = useRef(false)
+  const programmatic = useRef(false)
 
   useEffect(() => {
-    if (!view) return
-    const key = mapViewKey(view)
-    if (appliedKey.current === key) return
-    appliedKey.current = key
-    map.setView([view.center.latitude, view.center.longitude], view.zoom)
-  }, [map, view])
+    const noteMove = () => {
+      if (!programmatic.current) operatorMoved.current = true
+    }
+    map.on('dragstart', noteMove)
+    map.on('zoomstart', noteMove)
+    return () => {
+      map.off('dragstart', noteMove)
+      map.off('zoomstart', noteMove)
+    }
+  }, [map])
+
+  useEffect(() => {
+    const target = resolveInitialView(view, geo, operatorMoved.current)
+    if (!target || target.key === appliedKey.current) return
+    appliedKey.current = target.key
+    programmatic.current = true
+    map.setView(target.center, target.zoom, { animate: false })
+    programmatic.current = false
+  }, [map, view, geo])
 
   return null
 }
