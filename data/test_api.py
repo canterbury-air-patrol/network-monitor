@@ -103,6 +103,22 @@ def test_radios_filter_by_node(api_client):
 
 
 @pytest.mark.django_db
+def test_stations_list_named_and_ordered(api_client):
+    # The signal history charts label a reading's receiver from this list.
+    GroundStationFactory(name="zulu")
+    GroundStationFactory(name="alpha")
+    response = api_client.get(reverse("data_api_v1:groundstation-list"))
+    assert response.status_code == 200
+    assert [s["name"] for s in response.data["results"]] == ["alpha", "zulu"]
+
+
+@pytest.mark.django_db
+def test_stations_are_read_only(api_client):
+    response = api_client.post(reverse("data_api_v1:groundstation-list"), {"name": "bravo"}, format="json")
+    assert response.status_code == 405
+
+
+@pytest.mark.django_db
 def test_snapshots_ordered_newest_first(api_client):
     node = NodeFactory()
     older = NodeSnapshotFactory(node=node, captured_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc))

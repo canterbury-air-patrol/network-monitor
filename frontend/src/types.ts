@@ -91,3 +91,22 @@ export interface MapViewResponse {
   source: 'default' | 'mission'
   mission: number | null
 }
+
+export interface NodeResponse {
+  id: number
+  name: string
+}
+
+export type RadioType = 'wifi' | 'lora' | 'cellular' | 'bluetooth'
+
+export interface RadioResponse {
+  id: number
+  node: number
+  radio_type: RadioType
+  bands: string[]
+}
+
+export interface GroundStationResponse {
+  id: number
+  name: string
+}

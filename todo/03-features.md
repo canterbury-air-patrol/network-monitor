@@ -12,7 +12,7 @@
 - [x] **[P3-02]** Implement the signal coverage heatmap layer using `leaflet-heat` as the default visible layer. *(Requires: [P3-01])*
 - [x] **[P3-03]** Implement "Manual Pinning" mode for ground stations (frontend state management).
 - [x] **[P3-04]** Create UI for adding and editing manual ground stations. *(Requires: [P3-03])*
-- [ ] **[P3-05]** Implement signal strength history charts (e.g., Recharts). Wrap the panel in the `ErrorBoundary` from [P3-18]. *(Requires: [P3-01], [P3-18])*
+- [x] **[P3-05]** Implement signal strength history charts (e.g., Recharts). Wrap the panel in the `ErrorBoundary` from [P3-18]. *(Requires: [P3-01], [P3-18])* *(`SignalCharts` is a collapsible panel below the map, boundaried as "Signal history". It plots RSSI against `captured_at` for one node, one line per radio/band/receiver link, from `GET /api/v1/snapshots/?node=` — the trailing `DRF_PAGE_SIZE` window, polled every 15 s. Series labels resolve through `/api/v1/radios/`, `/api/v1/nodes/` and the new read-only `/api/v1/stations/`; losing a lookup degrades a label to its id but never the trace. The panel opens closed and fetches nothing until expanded, and Recharts is a lazy chunk, so the coverage map's initial bundle is unchanged. The legend is HTML rather than the chart's SVG one: it doubles as the per-series filter and is glove-sized.)*
 - [ ] **[P3-06]** Write Playwright E2E tests for UAV marker placement and movement. *(Requires: [P3-01])*
 - [ ] **[P3-07]** Write Playwright E2E tests for heatmap visibility. *(Requires: [P3-02])*
 
@@ -33,7 +33,7 @@
 
 - [x] **[P3-15]** Create a Python script to simulate a UAV flight path with configurable RadioReading values per radio/band/ground station for development and field testing. *(Referenced by: [P10-11], [P14-07])*
 - [ ] **[P3-16]** Perform a "High-Glare" UI audit: verify all interactive elements meet WCAG AA contrast ratios and are operable with gloves (minimum 44 px touch targets). *(Referenced by: [P13-06])*
-- [x] **[P3-18]** Wrap each major UI panel (Map, Sidebar, MissionControl, AlertPanel, SignalCharts) in a React `ErrorBoundary`. A crash in any one panel must show a contained fallback without affecting the others. The map layer displaying coverage gaps must remain functional even if all other panels fail. *(Done for the panels that exist: Map, Sidebar, MissionControl, the ground-station roster/form, and each map layer individually. SignalCharts ([P3-05]) and the AlertPanel ([P10-05]) must be wrapped in `ErrorBoundary` as they land.)*
+- [x] **[P3-18]** Wrap each major UI panel (Map, Sidebar, MissionControl, AlertPanel, SignalCharts) in a React `ErrorBoundary`. A crash in any one panel must show a contained fallback without affecting the others. The map layer displaying coverage gaps must remain functional even if all other panels fail. *(Done for the panels that exist: Map, Sidebar, MissionControl, SignalCharts, the ground-station roster/form, and each map layer individually. The AlertPanel ([P10-05]) must be wrapped in `ErrorBoundary` as it lands.)*
 
 ## Unit Preferences
 

@@ -8,6 +8,7 @@ router.register("missions", api_views.MissionViewSet, basename="mission")
 router.register("phases", api_views.MissionPhaseViewSet, basename="missionphase")
 router.register("nodes", api_views.NodeViewSet, basename="node")
 router.register("radios", api_views.RadioViewSet, basename="radio")
+router.register("stations", api_views.GroundStationViewSet, basename="groundstation")
 router.register("snapshots", api_views.NodeSnapshotViewSet, basename="snapshot")
 router.register("readings", api_views.RadioReadingViewSet, basename="radioreading")
 
