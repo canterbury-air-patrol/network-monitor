@@ -12,16 +12,19 @@ vi.mock('react-leaflet', () => ({
   Marker: ({
     position,
     icon,
+    title,
     children,
   }: {
     position: [number, number]
     icon?: Icon | DivIcon
+    title?: string
     children?: ReactNode
   }) => (
     <div
       data-testid="marker"
       data-position={position.join(',')}
       data-icon={icon?.options.className || 'default'}
+      title={title}
     >
       {children}
     </div>
@@ -69,6 +72,9 @@ describe('NodeMarkers', () => {
     render(<NodeMarkers />)
 
     expect(screen.getByTestId('marker')).toHaveAttribute('data-icon', 'default')
+    // The name reaches Leaflet as the icon's title, which is what the E2E
+    // suite locates a node's marker by
+    expect(screen.getByTitle('UAV-1')).toBe(screen.getByTestId('marker'))
     expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument()
     expect(screen.getByTestId('popup')).toHaveTextContent(
       'Live — last seen 2 s ago',

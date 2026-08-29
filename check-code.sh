@@ -35,7 +35,7 @@ run_check "ruff format" "${RUFF[@]}" format --check .
 # Enabled once the frontend build system is set up (todo/02-frontend.md [P2-01])
 if [ -f frontend/package.json ]; then
     if [ -x build-frontend.sh ]; then
-        run_check "prettier format" ./build-frontend.sh prettier --check "src/**/*.{ts,tsx}"
+        run_check "prettier format" ./build-frontend.sh prettier --check "{src,e2e}/**/*.{ts,tsx}"
         # tsc catches what eslint and vitest cannot: vitest strips types with
         # esbuild rather than checking them, so a type error reaches the build
         # untouched by the rest of these checks.

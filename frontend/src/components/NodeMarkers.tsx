@@ -49,6 +49,9 @@ function NodeMarker({ node, now }: { node: NodeInfo; now: number }) {
     <Marker
       position={[node.latitude, node.longitude]}
       icon={state === 'live' ? LIVE_ICON : STALE_ICONS[state]}
+      // Leaflet's default is the literal string "Marker" for every icon, which
+      // names no node on hover and nothing useful to a screen reader
+      title={node.nodeName}
     >
       {state !== 'live' && (
         <Tooltip
