@@ -1,5 +1,6 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useMapStore } from '../store'
+import GroundStationList from './GroundStationList'
 
 export default function Sidebar() {
   const { showUAVOverlay, toggleUAVOverlay, pinningMode, togglePinningMode } =
@@ -56,6 +57,7 @@ export default function Sidebar() {
             Click the map to place a ground station.
           </p>
         )}
+        <GroundStationList />
       </div>
     </aside>
   )
