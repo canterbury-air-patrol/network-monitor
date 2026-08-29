@@ -67,5 +67,24 @@ of the flight, which is how coverage gaps are staged. Runs are reproducible via
 `seed`; missing `Node`, `Radio` and `GroundStation` rows are created on the fly
 unless `--no-bootstrap` is given.
 
+## 📡 Stale Node Display
+A node that stops reporting is shown on the map by how long it has been
+silent, measured on the device's `captured_at` timestamps so a buffered
+device flushing old snapshots after link recovery does not read as healthy:
+
+- **Live** — reporting steadily; keeps the standard UAV marker.
+- **Link degraded** — silent past the degraded timeout, or still delivering
+  but with gaps that long; amber warning marker with a permanent
+  "last seen X ago" label.
+- **Contact lost** — nothing at all inside the lost timeout; greyed warning
+  marker with the same label.
+
+The thresholds default to 30 s and 120 s and are set at frontend build time
+for deployments flying slower reporting intervals:
+
+```bash
+VITE_LINK_DEGRADED_AFTER_S=60 VITE_LINK_LOST_AFTER_S=300 ./build-frontend.sh
+```
+
 ---
 *Maintained for mission-critical flight monitoring reliability.*

@@ -27,7 +27,7 @@
 
 ## Lost Contact & Stale Node Handling
 
-- [ ] **[P3-14]** Add stale-node UI: nodes whose most recent `captured_at` exceeds a configurable timeout are shown with a "last seen X minutes ago" label and a distinct marker style (greyed, warning icon). Distinguish link-degraded (intermittent recent data) from fully lost (no data in timeout window). *(Requires: [P1-17])*
+- [x] **[P3-14]** Add stale-node UI: nodes whose most recent `captured_at` exceeds a configurable timeout are shown with a "last seen X minutes ago" label and a distinct marker style (greyed, warning icon). Distinguish link-degraded (intermittent recent data) from fully lost (no data in timeout window). *(Requires: [P1-17])*
 
 ## Testing & Field Tools
 
