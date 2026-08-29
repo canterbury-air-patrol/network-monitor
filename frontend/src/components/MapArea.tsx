@@ -7,14 +7,20 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
-import { MapContainer, TileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
+import { fetchMapView, mapViewKey } from '../api/mapView'
 import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
-import type { NodeSnapshotResponse, PaginatedResponse } from '../types'
+import type {
+  MapViewResponse,
+  NodeSnapshotResponse,
+  PaginatedResponse,
+} from '../types'
 import ErrorBoundary from './ErrorBoundary'
 import GroundStationForm from './GroundStationForm'
 import GroundStationMarkers from './GroundStationMarkers'
@@ -25,8 +31,9 @@ import PinCapture from './PinCapture'
 // Vite hashes assets, breaking Leaflet's default icon auto-detection
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
 
-const DEFAULT_CENTER: [number, number] = [-43.5, 172.5]
-const DEFAULT_ZOOM = 10
+// Used only until the server's configured view arrives, and if it never does.
+const FALLBACK_CENTER: [number, number] = [-43.5, 172.5]
+const FALLBACK_ZOOM = 10
 
 interface OverlayProps {
   label: string
@@ -56,6 +63,26 @@ function MapOverlay({ label, onStatus, children }: OverlayProps) {
   )
 }
 
+/**
+ * Applies the server-configured viewport to the live map. Re-centring is keyed
+ * on the view itself, so a mission going active snaps the map to its area of
+ * operation while ordinary refetches leave the operator's panning alone.
+ */
+function MapViewController({ view }: { view: MapViewResponse | undefined }) {
+  const map = useMap()
+  const appliedKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!view) return
+    const key = mapViewKey(view)
+    if (appliedKey.current === key) return
+    appliedKey.current = key
+    map.setView([view.center.latitude, view.center.longitude], view.zoom)
+  }, [map, view])
+
+  return null
+}
+
 async function fetchSnapshots({
   signal,
 }: {
@@ -83,6 +110,12 @@ export default function MapArea() {
     })
   }, [])
 
+  const { data: mapView } = useQuery({
+    queryKey: ['map-view'],
+    queryFn: ({ signal }) => fetchMapView(signal),
+    refetchInterval: 30_000,
+  })
+
   const { data: snapshots = [] } = useQuery({
     queryKey: ['snapshots-heatmap'],
     queryFn: ({ signal }) => fetchSnapshots({ signal }),
@@ -107,14 +140,21 @@ export default function MapArea() {
   return (
     <main className="relative flex-1" data-testid="map-area">
       <MapContainer
-        center={DEFAULT_CENTER}
-        zoom={DEFAULT_ZOOM}
+        center={
+          mapView
+            ? [mapView.center.latitude, mapView.center.longitude]
+            : FALLBACK_CENTER
+        }
+        zoom={mapView?.zoom ?? FALLBACK_ZOOM}
         className={`h-full w-full ${pinningMode ? 'cursor-crosshair!' : ''}`}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+        <MapOverlay label="Map view" onStatus={onOverlayStatus}>
+          <MapViewController view={mapView} />
+        </MapOverlay>
         <MapOverlay label="Coverage" onStatus={onOverlayStatus}>
           <HeatmapLayer points={heatPoints} />
         </MapOverlay>

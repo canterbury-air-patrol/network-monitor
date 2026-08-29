@@ -1,6 +1,24 @@
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import F, Q
+
+# Leaflet's tile zoom scale; 22 is the deepest level any tile source offers.
+MAP_MIN_ZOOM = 0
+MAP_MAX_ZOOM = 22
+
+
+def _latitude_validators():
+    return [MinValueValidator(-90.0), MaxValueValidator(90.0)]
+
+
+def _longitude_validators():
+    return [MinValueValidator(-180.0), MaxValueValidator(180.0)]
+
+
+def _zoom_validators():
+    return [MinValueValidator(MAP_MIN_ZOOM), MaxValueValidator(MAP_MAX_ZOOM)]
 
 
 class Node(models.Model):
@@ -177,7 +195,22 @@ class Mission(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Optional viewport override so the map snaps to this mission's area of
+    # operation when it goes active. Left null, the deployment default applies.
+    map_latitude = models.FloatField(null=True, blank=True, validators=_latitude_validators())
+    map_longitude = models.FloatField(null=True, blank=True, validators=_longitude_validators())
+    map_zoom = models.PositiveSmallIntegerField(null=True, blank=True, validators=_zoom_validators())
     # site FK added in Phase 5 (Org/Site multi-tenancy)
+
+    class Meta:
+        constraints = [
+            # Half a centre is not a centre; zoom is overridable on its own.
+            models.CheckConstraint(
+                name="mission_map_centre_both_or_neither",
+                condition=Q(map_latitude__isnull=True, map_longitude__isnull=True)
+                | Q(map_latitude__isnull=False, map_longitude__isnull=False),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.get_status_display()})"
@@ -219,3 +252,76 @@ class MissionPhase(models.Model):
 
     def __str__(self):
         return f"{self.mission} — {self.name}"
+
+
+class MapDefaults(models.Model):
+    """Deployment-wide default map viewport, edited in the Django admin.
+
+    One deployment, one default view: the row is pinned to pk=1. Per-site
+    configuration arrives with Phase 5 multi-tenancy; until then a single row
+    suffices, and an install with no row at all falls back to the
+    ``MAP_DEFAULT_*`` settings.
+    """
+
+    latitude = models.FloatField(validators=_latitude_validators())
+    longitude = models.FloatField(validators=_longitude_validators())
+    zoom = models.PositiveSmallIntegerField(validators=_zoom_validators())
+
+    class Meta:
+        verbose_name = "map defaults"
+        verbose_name_plural = "map defaults"
+
+    def save(self, *args, **kwargs):
+        # Every write lands on the same row, whichever way it was created:
+        # saving a second instance updates the default rather than failing on
+        # the primary key.
+        self.pk = 1
+        kwargs["force_insert"] = False
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Map defaults ({self.latitude}, {self.longitude}) @ z{self.zoom}"
+
+    @classmethod
+    def load(cls):
+        """The configured defaults, or an unsaved instance of the settings
+        fallback. Reading the viewport must never write to the database."""
+        row = cls.objects.filter(pk=1).first()
+        if row is not None:
+            return row
+        return cls(
+            pk=1,
+            latitude=settings.MAP_DEFAULT_LATITUDE,
+            longitude=settings.MAP_DEFAULT_LONGITUDE,
+            zoom=settings.MAP_DEFAULT_ZOOM,
+        )
+
+
+def resolve_map_view():
+    """The viewport a client should open on: the active mission's override, if
+    it has one, layered field-by-field over the deployment default.
+
+    A mission may override the centre, the zoom, or both, so a mission that
+    only names its area of operation keeps the deployment's zoom.
+    """
+    defaults = MapDefaults.load()
+    latitude, longitude, zoom = defaults.latitude, defaults.longitude, defaults.zoom
+
+    mission = (
+        Mission.objects.filter(status=Mission.Status.ACTIVE)
+        .filter(Q(map_latitude__isnull=False) | Q(map_zoom__isnull=False))
+        .order_by("-updated_at", "-id")
+        .first()
+    )
+    if mission is not None:
+        if mission.map_latitude is not None:
+            latitude, longitude = mission.map_latitude, mission.map_longitude
+        if mission.map_zoom is not None:
+            zoom = mission.map_zoom
+
+    return {
+        "center": {"latitude": latitude, "longitude": longitude},
+        "zoom": zoom,
+        "source": "mission" if mission is not None else "default",
+        "mission": mission.pk if mission is not None else None,
+    }

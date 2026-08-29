@@ -13,4 +13,5 @@ router.register("readings", api_views.RadioReadingViewSet, basename="radioreadin
 
 urlpatterns = router.urls + [
     path("telemetry/ingest/", api_views.TelemetryIngestView.as_view(), name="telemetry-ingest"),
+    path("settings/map/", api_views.MapSettingsView.as_view(), name="map-settings"),
 ]

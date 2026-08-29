@@ -176,6 +176,12 @@ else:
 TELEMETRY_MAX_AGE_HOURS = int(os.environ.get("TELEMETRY_MAX_AGE_HOURS", "24"))
 TELEMETRY_FUTURE_TOLERANCE_MINUTES = 5
 
+# Fallback map viewport, used until an operator saves a MapDefaults row in the
+# admin. Site-level configuration arrives with Phase 5 multi-tenancy.
+MAP_DEFAULT_LATITUDE = float(os.environ.get("MAP_DEFAULT_LATITUDE", "-43.5"))
+MAP_DEFAULT_LONGITUDE = float(os.environ.get("MAP_DEFAULT_LONGITUDE", "172.5"))
+MAP_DEFAULT_ZOOM = int(os.environ.get("MAP_DEFAULT_ZOOM", "10"))
+
 CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 CELERY_TASK_SERIALIZER = "json"
