@@ -1,0 +1,67 @@
+{
+  "name": "Port Hills demo sweep",
+  "seed": 20250829,
+  "sample_interval_s": 2.0,
+  "uav": {
+    "node": "sim-uav-01",
+    "ground_speed_mps": 14.0,
+    "radios": [
+      { "radio_type": "wifi", "bands": ["2.4GHz", "5GHz"] },
+      { "radio_type": "lora", "bands": ["915MHz"] }
+    ]
+  },
+  "ground_stations": [
+    { "name": "sim-gs-command", "longitude": 172.6200, "latitude": -43.6000, "altitude": 210.0 },
+    { "name": "sim-gs-ridge", "longitude": 172.6450, "latitude": -43.5940, "altitude": 340.0 },
+    { "name": "sim-gs-valley", "longitude": 172.6100, "latitude": -43.6120, "altitude": 90.0 }
+  ],
+  "link_defaults": {
+    "tx_power_dbm": 20.0,
+    "reference_loss_db": 40.0,
+    "path_loss_exponent": 2.2,
+    "noise_sigma_db": 1.5,
+    "noise_floor_dbm": -95.0,
+    "sensitivity_dbm": -95.0
+  },
+  "links": [
+    {
+      "band": "5GHz",
+      "reference_loss_db": 46.4,
+      "path_loss_exponent": 2.6,
+      "noise_floor_dbm": -100.0,
+      "sensitivity_dbm": -100.0,
+      "comment": "Higher frequency: more free-space loss and a shorter usable range."
+    },
+    {
+      "radio_type": "lora",
+      "tx_power_dbm": 14.0,
+      "reference_loss_db": 32.0,
+      "path_loss_exponent": 2.0,
+      "noise_floor_dbm": -120.0,
+      "sensitivity_dbm": -120.0,
+      "noise_sigma_db": 2.5
+    },
+    {
+      "ground_station": "sim-gs-valley",
+      "band": "5GHz",
+      "enabled": false,
+      "comment": "Valley station has no 5 GHz antenna fitted — a permanent band gap."
+    }
+  ],
+  "dropouts": [
+    {
+      "ground_station": "sim-gs-ridge",
+      "from_s": 120.0,
+      "to_s": 210.0,
+      "comment": "Ridge station loses power mid-flight, opening a coverage gap."
+    }
+  ],
+  "waypoints": [
+    { "longitude": 172.6205, "latitude": -43.6005, "altitude": 220.0 },
+    { "longitude": 172.6320, "latitude": -43.5960, "altitude": 320.0 },
+    { "longitude": 172.6480, "latitude": -43.5930, "altitude": 380.0 },
+    { "longitude": 172.6600, "latitude": -43.5980, "altitude": 400.0 },
+    { "longitude": 172.6400, "latitude": -43.6100, "altitude": 300.0 },
+    { "longitude": 172.6205, "latitude": -43.6005, "altitude": 220.0 }
+  ]
+}
