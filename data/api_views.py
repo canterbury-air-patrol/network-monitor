@@ -6,8 +6,18 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Mission, MissionPhase, Node, NodeSnapshot, Radio, RadioReading, resolve_map_view
+from .models import (
+    GroundStation,
+    Mission,
+    MissionPhase,
+    Node,
+    NodeSnapshot,
+    Radio,
+    RadioReading,
+    resolve_map_view,
+)
 from .serializers import (
+    GroundStationSerializer,
     MapViewSerializer,
     MissionPhaseSerializer,
     MissionSerializer,
@@ -132,6 +142,15 @@ class RadioViewSet(viewsets.ReadOnlyModelViewSet):
         if node_id:
             qs = qs.filter(node_id=node_id)
         return qs
+
+
+class GroundStationViewSet(viewsets.ReadOnlyModelViewSet):
+    """Surveyed ground stations, read-only. The signal history charts resolve a
+    reading's receiver to a name with this; operator-pinned stations ([P3-03])
+    are browser-local and deliberately absent."""
+
+    queryset = GroundStation.objects.order_by("name")
+    serializer_class = GroundStationSerializer
 
 
 class NodeSnapshotViewSet(viewsets.ReadOnlyModelViewSet):

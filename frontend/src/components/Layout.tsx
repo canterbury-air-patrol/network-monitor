@@ -1,11 +1,12 @@
 import ErrorBoundary from './ErrorBoundary'
 import MapArea from './MapArea'
 import Sidebar from './Sidebar'
+import SignalCharts from './SignalCharts'
 
 /**
- * The two top-level panels are boundaried independently so a crash in one
- * leaves the other on screen — losing the sidebar must not take the map with
- * it.
+ * The top-level panels are boundaried independently so a crash in one leaves
+ * the others on screen — losing the sidebar or the signal charts must not take
+ * the map with it.
  */
 export default function Layout() {
   return (
@@ -13,9 +14,14 @@ export default function Layout() {
       <ErrorBoundary label="Sidebar">
         <Sidebar />
       </ErrorBoundary>
-      <ErrorBoundary label="Map">
-        <MapArea />
-      </ErrorBoundary>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <ErrorBoundary label="Map">
+          <MapArea />
+        </ErrorBoundary>
+        <ErrorBoundary label="Signal history">
+          <SignalCharts />
+        </ErrorBoundary>
+      </div>
     </div>
   )
 }
