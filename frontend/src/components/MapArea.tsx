@@ -4,7 +4,7 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import { useMemo } from 'react'
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
 import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
@@ -12,6 +12,7 @@ import type { NodeSnapshotResponse, PaginatedResponse } from '../types'
 import GroundStationForm from './GroundStationForm'
 import GroundStationMarkers from './GroundStationMarkers'
 import HeatmapLayer from './HeatmapLayer'
+import NodeMarkers from './NodeMarkers'
 import PinCapture from './PinCapture'
 
 // Vite hashes assets, breaking Leaflet's default icon auto-detection
@@ -32,9 +33,8 @@ async function fetchSnapshots({
 }
 
 export default function MapArea() {
-  const { nodes, showUAVOverlay, pinningMode } = useMapStore(
+  const { showUAVOverlay, pinningMode } = useMapStore(
     useShallow((s) => ({
-      nodes: s.nodes,
       showUAVOverlay: s.showUAVOverlay,
       pinningMode: s.pinningMode,
     })),
@@ -75,21 +75,7 @@ export default function MapArea() {
         <HeatmapLayer points={heatPoints} />
         <PinCapture />
         <GroundStationMarkers />
-        {showUAVOverlay &&
-          Object.values(nodes).map((node) => (
-            <Marker
-              key={node.nodeId}
-              position={[node.latitude, node.longitude]}
-            >
-              <Popup>
-                <strong>{node.nodeName}</strong>
-                <br />
-                Alt: {node.altitude.toFixed(0)} m
-                <br />
-                {new Date(node.capturedAt).toLocaleTimeString()}
-              </Popup>
-            </Marker>
-          ))}
+        {showUAVOverlay && <NodeMarkers />}
       </MapContainer>
       <GroundStationForm />
     </main>

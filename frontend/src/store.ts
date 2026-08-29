@@ -1,11 +1,17 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ManualGroundStation, NodeInfo, PendingPin } from './types'
+import { mergeCapture } from './staleness'
+import type {
+  ManualGroundStation,
+  NodeInfo,
+  NodeUpdate,
+  PendingPin,
+} from './types'
 
 interface MapState {
   nodes: Record<number, NodeInfo>
   showUAVOverlay: boolean
-  upsertNode: (info: NodeInfo) => void
+  upsertNode: (info: NodeUpdate) => void
   toggleUAVOverlay: () => void
 
   manualGroundStations: Record<number, ManualGroundStation>
@@ -43,8 +49,41 @@ export const useMapStore = create<MapState>()(
     (set) => ({
       nodes: {},
       showUAVOverlay: false,
+      // Buffered devices flush older snapshots after link recovery ([P1-17]),
+      // so a late arrival contributes to the capture history but must not drag
+      // the displayed position backwards.
       upsertNode: (info) =>
-        set((state) => ({ nodes: { ...state.nodes, [info.nodeId]: info } })),
+        set((state) => {
+          const existing = state.nodes[info.nodeId]
+          const capturedMs = Date.parse(info.capturedAt)
+          if (Number.isNaN(capturedMs)) {
+            // An unusable timestamp must not enter the freshness history; show
+            // the position only while nothing better is known about the node.
+            return existing
+              ? {}
+              : {
+                  nodes: {
+                    ...state.nodes,
+                    [info.nodeId]: { ...info, recentCaptures: [] },
+                  },
+                }
+          }
+          const newest = existing?.recentCaptures[0]
+          const latest =
+            newest !== undefined && capturedMs < newest ? existing : info
+          return {
+            nodes: {
+              ...state.nodes,
+              [info.nodeId]: {
+                ...latest,
+                recentCaptures: mergeCapture(
+                  existing?.recentCaptures ?? [],
+                  capturedMs,
+                ),
+              },
+            },
+          }
+        }),
       toggleUAVOverlay: () =>
         set((state) => ({ showUAVOverlay: !state.showUAVOverlay })),
 

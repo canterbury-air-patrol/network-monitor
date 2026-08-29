@@ -5,7 +5,12 @@ export interface NodeInfo {
   longitude: number
   altitude: number
   capturedAt: string
+  /** Recent capture times (epoch ms, newest first) used to judge link health. */
+  recentCaptures: number[]
 }
+
+/** A single telemetry arrival; the store maintains `recentCaptures` itself. */
+export type NodeUpdate = Omit<NodeInfo, 'recentCaptures'>
 
 export interface RadioReadingResponse {
   id: number

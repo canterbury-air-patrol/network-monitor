@@ -242,3 +242,46 @@ describe('persistence', () => {
     expect(stored.state.pendingPin).toBeUndefined()
   })
 })
+
+describe('node telemetry history', () => {
+  function snapshot(capturedAt: string, altitude = 120) {
+    return {
+      nodeId: 7,
+      nodeName: 'UAV-7',
+      latitude: -43.5,
+      longitude: 172.5,
+      altitude,
+      capturedAt,
+    }
+  }
+
+  it('records each capture time, newest first', () => {
+    useMapStore.getState().upsertNode(snapshot('2026-05-20T00:00:00Z'))
+    useMapStore.getState().upsertNode(snapshot('2026-05-20T00:00:05Z'))
+
+    expect(useMapStore.getState().nodes[7].recentCaptures).toEqual([
+      Date.parse('2026-05-20T00:00:05Z'),
+      Date.parse('2026-05-20T00:00:00Z'),
+    ])
+  })
+
+  it('keeps the newest position when a buffered device backfills older snapshots', () => {
+    useMapStore.getState().upsertNode(snapshot('2026-05-20T00:00:10Z', 300))
+    useMapStore.getState().upsertNode(snapshot('2026-05-20T00:00:05Z', 100))
+
+    const node = useMapStore.getState().nodes[7]
+    expect(node.altitude).toBe(300)
+    expect(node.capturedAt).toBe('2026-05-20T00:00:10Z')
+    // The backfilled capture still counts towards link health.
+    expect(node.recentCaptures).toContain(Date.parse('2026-05-20T00:00:05Z'))
+  })
+
+  it('ignores a snapshot whose timestamp cannot be parsed', () => {
+    useMapStore.getState().upsertNode(snapshot('2026-05-20T00:00:05Z'))
+    useMapStore.getState().upsertNode(snapshot('not-a-timestamp', 999))
+
+    const node = useMapStore.getState().nodes[7]
+    expect(node.altitude).toBe(120)
+    expect(node.recentCaptures).toEqual([Date.parse('2026-05-20T00:00:05Z')])
+  })
+})
