@@ -61,3 +61,25 @@ export interface PendingPin {
   latitude: number
   longitude: number
 }
+
+export type MissionStatus = 'pending' | 'active' | 'completed' | 'archived'
+
+export interface MissionResponse {
+  id: number
+  name: string
+  operator_notes: string
+  status: MissionStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface MissionPhaseResponse {
+  id: number
+  mission: number
+  name: string
+  area_of_operation_notes: string
+  ground_station_layout: string
+  started_at: string | null
+  ended_at: string | null
+  is_active: boolean
+}

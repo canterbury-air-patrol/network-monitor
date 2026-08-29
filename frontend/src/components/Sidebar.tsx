@@ -1,6 +1,7 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useMapStore } from '../store'
 import GroundStationList from './GroundStationList'
+import MissionControl from './MissionControl'
 
 export default function Sidebar() {
   const { showUAVOverlay, toggleUAVOverlay, pinningMode, togglePinningMode } =
@@ -15,12 +16,13 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="bg-surface flex w-64 flex-col text-white"
+      className="bg-surface flex w-64 shrink-0 flex-col overflow-y-auto text-white"
       data-testid="sidebar"
     >
       <div className="p-4 text-lg font-semibold tracking-wide">
         Network Monitor
       </div>
+      <MissionControl />
       <div className="border-t border-white/10 p-4">
         <p className="mb-2 text-xs font-semibold tracking-wide text-white/50 uppercase">
           Layers

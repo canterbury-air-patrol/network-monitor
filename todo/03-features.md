@@ -22,7 +22,7 @@
 - [x] **[P3-09]** Implement `MissionPhase` model: mission FK, name, area-of-operation notes, ground-station layout description. Phase boundaries are defined by `captured_at` timestamp windows rather than a FK on each snapshot, keeping ingest writes cheap. Generate and apply migration. *(Requires: [P3-08]; Blocks: [P3-10], Phase 9)*
 - [x] **[P3-10]** Implement Mission lifecycle API endpoints: create, start, stop, and archive. *(Requires: [P3-08]; Blocks: [P3-11])*
 - [x] **[P3-11]** Implement MissionPhase API endpoints: create phase, switch active phase, close phase. *(Requires: [P3-09], [P3-10])*
-- [ ] **[P3-12]** Add Mission control UI: start/stop/archive buttons, active mission indicator, and phase management panel showing the current phase and allowing phase switching. *(Requires: [P3-10], [P3-11])*
+- [x] **[P3-12]** Add Mission control UI: start/stop/archive buttons, active mission indicator, and phase management panel showing the current phase and allowing phase switching. *(Requires: [P3-10], [P3-11])*
 - [x] **[P3-13]** Write integration tests for the full mission and phase lifecycle: create → start → add phases → switch phases → stop → archive. *(Requires: [P3-10], [P3-11])*
 
 ## Lost Contact & Stale Node Handling
