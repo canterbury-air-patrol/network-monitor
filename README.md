@@ -41,5 +41,31 @@ This project adheres to strict engineering mandates defined in [AGENTS.md](./AGE
 3.  **Build Frontend:** `./build-frontend.sh`
 4.  **Run Tests:** `docker-compose run --rm test` (Backend) | `./build-frontend.sh` (Frontend)
 
+## 🛰 Flight Path Simulator
+Generates a synthetic UAV flight — snapshots plus per radio/band/ground-station
+`RadioReading` values — so the map, heatmap and coverage-gap tooling can be
+exercised without hardware.
+
+```bash
+# Fast-forward the bundled demo flight straight into the database
+docker compose exec app ./manage.py simulate_flight --demo
+
+# Feed a running dev server through the ingest API, at wall-clock pace
+docker compose exec app ./manage.py simulate_flight \
+    --scenario data/scenarios/demo_flight.json --transport http --realtime
+
+# Emit ingest payloads as JSON lines for an external harness
+docker compose exec app ./manage.py simulate_flight --demo --transport stdout
+```
+
+Scenarios are JSON documents (see [`data/scenarios/demo_flight.json`](./data/scenarios/demo_flight.json))
+describing the ground stations, the UAV's radios and bands, the waypoint path,
+and the link model. `links` entries override the log-distance path-loss
+parameters — or pin an exact `rssi_dbm` — for any combination of radio type,
+band and ground station, and `dropouts` take a station off the air for a window
+of the flight, which is how coverage gaps are staged. Runs are reproducible via
+`seed`; missing `Node`, `Radio` and `GroundStation` rows are created on the fly
+unless `--no-bootstrap` is given.
+
 ---
 *Maintained for mission-critical flight monitoring reliability.*
