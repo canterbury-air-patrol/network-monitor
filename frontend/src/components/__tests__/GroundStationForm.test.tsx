@@ -2,10 +2,13 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import GroundStationForm from '../GroundStationForm'
+import { usePreferencesStore } from '../../preferences'
 import { useMapStore } from '../../store'
+import { DEFAULT_UNITS } from '../../units'
 
 beforeEach(() => {
   localStorage.clear()
+  usePreferencesStore.setState({ units: DEFAULT_UNITS })
   useMapStore.setState({
     manualGroundStations: {},
     pinningMode: false,
@@ -165,5 +168,67 @@ describe('editing a ground station', () => {
 
     expect(useMapStore.getState().editingStationId).toBeNull()
     expect(useMapStore.getState().manualGroundStations[1].name).toBe('Alpha')
+  })
+})
+
+describe("altitude in the operator's unit", () => {
+  it('labels the field with the unit and stores metres', async () => {
+    const user = userEvent.setup()
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    startNewPin()
+    render(<GroundStationForm />)
+
+    expect(screen.getByLabelText(/altitude/i)).toHaveAccessibleName(
+      'Altitude (ft)',
+    )
+
+    await user.type(screen.getByLabelText(/name/i), 'Summit Repeater')
+    await user.type(screen.getByLabelText(/altitude/i), '1050')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // The roster, the map and the API all speak metres, whatever was typed
+    expect(
+      useMapStore.getState().manualGroundStations[1].altitudeM,
+    ).toBeCloseTo(320.04, 2)
+  })
+
+  it('prefills an existing station in the display unit', () => {
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 320)
+    useMapStore.getState().startEditingStation(1)
+    render(<GroundStationForm />)
+
+    expect(screen.getByLabelText(/altitude/i)).toHaveValue('1049.9')
+  })
+
+  it('leaves the stored altitude exact when it is not retyped', async () => {
+    const user = userEvent.setup()
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 320)
+    useMapStore.getState().startEditingStation(1)
+    render(<GroundStationForm />)
+
+    await user.clear(screen.getByLabelText(/name/i))
+    await user.type(screen.getByLabelText(/name/i), 'Alpha Renamed')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // The field was seeded from a rounded conversion; converting it back would
+    // walk the altitude a few centimetres on every edit
+    expect(useMapStore.getState().manualGroundStations[1].altitudeM).toBe(320)
+  })
+
+  it('reseeds the field when the unit changes under an open form', () => {
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 320)
+    useMapStore.getState().startEditingStation(1)
+    render(<GroundStationForm />)
+
+    expect(screen.getByLabelText(/altitude/i)).toHaveValue('320')
+
+    act(() => usePreferencesStore.getState().setAltitudeUnit('ft'))
+
+    expect(screen.getByLabelText(/altitude/i)).toHaveAccessibleName(
+      'Altitude (ft)',
+    )
+    expect(screen.getByLabelText(/altitude/i)).toHaveValue('1049.9')
   })
 })

@@ -1,6 +1,7 @@
 import L from 'leaflet'
 import { Marker, Popup, Tooltip } from 'react-leaflet'
 import { useNow } from '../hooks/useNow'
+import { usePreferencesStore } from '../preferences'
 import { useMapStore } from '../store'
 import {
   classifyLink,
@@ -9,6 +10,7 @@ import {
   type LinkState,
 } from '../staleness'
 import type { NodeInfo } from '../types'
+import { formatAltitude } from '../units'
 
 // A node that is still reporting keeps Leaflet's default teardrop; the stale
 // states get a flat glyph that reads at a glance in daylight — amber warning
@@ -55,6 +57,7 @@ const TOOLTIP_CLASS: Record<'degraded' | 'lost', string> = {
 }
 
 function NodeMarker({ node, now }: { node: NodeInfo; now: number }) {
+  const altitudeUnit = usePreferencesStore((s) => s.units.altitude)
   const state: LinkState = classifyLink(node.recentCaptures, now)
   const newest = node.recentCaptures[0]
   const lastSeen =
@@ -83,7 +86,7 @@ function NodeMarker({ node, now }: { node: NodeInfo; now: number }) {
         <br />
         {LINK_STATE_LABEL[state]} — last seen {lastSeen}
         <br />
-        Alt: {node.altitude.toFixed(0)} m
+        Alt: {formatAltitude(node.altitude, altitudeUnit)}
         <br />
         {new Date(node.capturedAt).toLocaleTimeString()}
       </Popup>

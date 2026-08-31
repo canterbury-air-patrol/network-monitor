@@ -2,9 +2,11 @@ import { act, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MapArea from '../MapArea'
+import { usePreferencesStore } from '../../preferences'
 import { useMapStore } from '../../store'
 import { renderWithQuery } from '../../test/query'
 import type { MapViewResponse, NodeSnapshotResponse } from '../../types'
+import { DEFAULT_UNITS } from '../../units'
 
 const setView = vi.fn()
 
@@ -52,6 +54,19 @@ vi.mock('react-leaflet', () => ({
     </div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
+  ScaleControl: ({
+    metric,
+    imperial,
+  }: {
+    metric?: boolean
+    imperial?: boolean
+  }) => (
+    <div
+      data-testid="scale-control"
+      data-metric={String(Boolean(metric))}
+      data-imperial={String(Boolean(imperial))}
+    />
+  ),
   useMap: () => fakeMap,
 }))
 
@@ -140,6 +155,7 @@ beforeEach(() => {
   setView.mockClear()
   mapHandlers.clear()
   getCurrentPosition.mockReset()
+  usePreferencesStore.setState({ units: DEFAULT_UNITS })
   useMapStore.setState({
     showUAVOverlay: true,
     pinningMode: false,
@@ -361,5 +377,23 @@ describe('MapArea device location', () => {
         animate: false,
       }),
     )
+  })
+})
+
+describe('MapArea scale bar', () => {
+  it("reads in the operator's distance unit", () => {
+    renderWithQuery(<MapArea />)
+
+    const scale = screen.getByTestId('scale-control')
+    expect(scale).toHaveAttribute('data-metric', 'true')
+    expect(scale).toHaveAttribute('data-imperial', 'false')
+
+    act(() => usePreferencesStore.getState().setDistanceUnit('mi'))
+
+    // Leaflet reads a control's options once, so the bar is remounted rather
+    // than left showing kilometres under a changed preference
+    const imperialScale = screen.getByTestId('scale-control')
+    expect(imperialScale).toHaveAttribute('data-metric', 'false')
+    expect(imperialScale).toHaveAttribute('data-imperial', 'true')
   })
 })
