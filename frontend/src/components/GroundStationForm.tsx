@@ -1,16 +1,30 @@
 import { useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { usePreferencesStore } from '../preferences'
 import { useMapStore } from '../store'
 import type { PendingPin } from '../types'
+import {
+  altitudeInputValue,
+  ALTITUDE_UNIT_LABEL,
+  toMetres,
+  type AltitudeUnit,
+} from '../units'
 
 interface Fields {
   name: string
-  altitudeM: string
+  /** Typed in the operator's altitude unit ([P3-17]); stored in metres. */
+  altitude: string
   latitude: string
   longitude: string
 }
 
-const EMPTY: Fields = { name: '', altitudeM: '', latitude: '', longitude: '' }
+const EMPTY: Fields = { name: '', altitude: '', latitude: '', longitude: '' }
+
+/** A plausible mast height in each unit, so the hint matches what is asked for. */
+const ALTITUDE_PLACEHOLDER: Record<AltitudeUnit, string> = {
+  m: 'e.g. 320',
+  ft: 'e.g. 1050',
+}
 
 function parseNumber(raw: string): number | null {
   const trimmed = raw.trim()
@@ -21,6 +35,8 @@ function parseNumber(raw: string): number | null {
 
 interface FieldsProps {
   initial: Fields
+  /** The unit the altitude field is typed and displayed in. */
+  altitudeUnit: AltitudeUnit
   /** Editing exposes coordinate inputs; a new pin shows its map position. */
   pendingPin: PendingPin | null
   /** Returns a message to display, or null once the station has been saved. */
@@ -30,6 +46,7 @@ interface FieldsProps {
 
 function StationFields({
   initial,
+  altitudeUnit,
   pendingPin,
   onSubmit,
   onCancel,
@@ -72,12 +89,12 @@ function StationFields({
       </label>
 
       <label className="mb-3 block text-xs text-white/70">
-        Altitude (m)
+        Altitude ({ALTITUDE_UNIT_LABEL[altitudeUnit]})
         <input
-          value={fields.altitudeM}
-          onChange={(e) => set('altitudeM', e.target.value)}
+          value={fields.altitude}
+          onChange={(e) => set('altitude', e.target.value)}
           inputMode="decimal"
-          placeholder="e.g. 320"
+          placeholder={ALTITUDE_PLACEHOLDER[altitudeUnit]}
           className={inputClass}
         />
       </label>
@@ -162,10 +179,18 @@ export default function GroundStationForm() {
   const cancelPin = useMapStore((s) => s.cancelPin)
   const updateGroundStation = useMapStore((s) => s.updateGroundStation)
   const stopEditingStation = useMapStore((s) => s.stopEditingStation)
+  const altitudeUnit = usePreferencesStore((s) => s.units.altitude)
 
   if (station) {
+    const initial: Fields = {
+      name: station.name,
+      altitude: altitudeInputValue(station.altitudeM, altitudeUnit),
+      latitude: String(station.latitude),
+      longitude: String(station.longitude),
+    }
+
     const save = (fields: Fields) => {
-      const common = validateCommon(fields)
+      const common = validateCommon(fields, altitudeUnit)
       if (typeof common === 'string') return common
 
       const latitude = parseNumber(fields.latitude)
@@ -177,21 +202,32 @@ export default function GroundStationForm() {
         return 'Longitude must be between -180 and 180.'
       }
 
-      updateGroundStation(station.id, { ...common, latitude, longitude })
+      // Re-saving a station whose altitude was never retyped keeps the stored
+      // metres exactly: the field was seeded from a rounded conversion, and
+      // converting it back would walk the altitude a little every edit.
+      const altitudeM =
+        fields.altitude.trim() === initial.altitude
+          ? station.altitudeM
+          : common.altitudeM
+
+      updateGroundStation(station.id, {
+        name: common.name,
+        altitudeM,
+        latitude,
+        longitude,
+      })
       stopEditingStation()
       return null
     }
 
     return (
-      // Remounting per station reseeds the inputs without a state-sync effect
+      // Remounting per station reseeds the inputs without a state-sync effect.
+      // Changing the altitude unit reseeds them too: the number in the field
+      // means something else the moment the label beside it changes.
       <StationFields
-        key={`edit-${station.id}`}
-        initial={{
-          name: station.name,
-          altitudeM: String(station.altitudeM),
-          latitude: String(station.latitude),
-          longitude: String(station.longitude),
-        }}
+        key={`edit-${station.id}-${altitudeUnit}`}
+        initial={initial}
+        altitudeUnit={altitudeUnit}
         pendingPin={null}
         onSubmit={save}
         onCancel={stopEditingStation}
@@ -202,7 +238,7 @@ export default function GroundStationForm() {
   if (!pendingPin) return null
 
   const save = (fields: Fields) => {
-    const common = validateCommon(fields)
+    const common = validateCommon(fields, altitudeUnit)
     if (typeof common === 'string') return common
 
     confirmPin(common.name, common.altitudeM)
@@ -211,8 +247,9 @@ export default function GroundStationForm() {
 
   return (
     <StationFields
-      key="new"
+      key={`new-${altitudeUnit}`}
       initial={EMPTY}
+      altitudeUnit={altitudeUnit}
       pendingPin={pendingPin}
       onSubmit={save}
       onCancel={cancelPin}
@@ -220,15 +257,20 @@ export default function GroundStationForm() {
   )
 }
 
-/** Returns the parsed name and altitude, or the message explaining what failed. */
+/**
+ * Returns the parsed name and the altitude in metres — the field is typed in
+ * the operator's unit ([P3-17]) but everything downstream stores metres — or
+ * the message explaining what failed.
+ */
 function validateCommon(
   fields: Fields,
+  altitudeUnit: AltitudeUnit,
 ): { name: string; altitudeM: number } | string {
   const name = fields.name.trim()
   if (name === '') return 'Name is required.'
 
-  const altitudeM = parseNumber(fields.altitudeM)
-  if (altitudeM === null) return 'Altitude must be a number.'
+  const altitude = parseNumber(fields.altitude)
+  if (altitude === null) return 'Altitude must be a number.'
 
-  return { name, altitudeM }
+  return { name, altitudeM: toMetres(altitude, altitudeUnit) }
 }

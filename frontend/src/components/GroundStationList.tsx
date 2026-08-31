@@ -1,5 +1,7 @@
 import { useShallow } from 'zustand/react/shallow'
+import { usePreferencesStore } from '../preferences'
 import { useMapStore } from '../store'
+import { formatAltitude } from '../units'
 
 /** Roster of pinned ground stations with edit/remove controls. */
 export default function GroundStationList() {
@@ -11,6 +13,7 @@ export default function GroundStationList() {
   )
   const startEditingStation = useMapStore((s) => s.startEditingStation)
   const removeGroundStation = useMapStore((s) => s.removeGroundStation)
+  const altitudeUnit = usePreferencesStore((s) => s.units.altitude)
 
   const list = Object.values(stations)
 
@@ -35,7 +38,7 @@ export default function GroundStationList() {
             {station.name}
           </p>
           <p className="text-xs text-slate-300">
-            {station.altitudeM.toFixed(0)} m &middot;{' '}
+            {formatAltitude(station.altitudeM, altitudeUnit)} &middot;{' '}
             {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
           </p>
           <div className="mt-2 flex gap-2">

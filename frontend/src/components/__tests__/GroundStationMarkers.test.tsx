@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import GroundStationMarkers from '../GroundStationMarkers'
+import { usePreferencesStore } from '../../preferences'
 import { useMapStore } from '../../store'
+import { DEFAULT_UNITS } from '../../units'
 
 // react-leaflet needs a live map context; the markers themselves are what matter
 vi.mock('react-leaflet', () => ({
@@ -23,6 +25,7 @@ vi.mock('react-leaflet', () => ({
 
 beforeEach(() => {
   localStorage.clear()
+  usePreferencesStore.setState({ units: DEFAULT_UNITS })
   useMapStore.setState({
     manualGroundStations: {},
     pinningMode: false,
@@ -65,5 +68,13 @@ describe('GroundStationMarkers', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove' }))
     expect(useMapStore.getState().manualGroundStations).toEqual({})
+  })
+
+  it("reports altitude in the operator's unit", () => {
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 320)
+    render(<GroundStationMarkers />)
+
+    expect(screen.getByText(/Alt: 1050 ft/)).toBeInTheDocument()
   })
 })

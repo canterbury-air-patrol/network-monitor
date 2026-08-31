@@ -11,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer, ScaleControl, TileLayer, useMap } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
 import { fetchMapView } from '../api/mapView'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -20,6 +20,7 @@ import {
   FALLBACK_ZOOM,
   resolveInitialView,
 } from '../initialView'
+import { usePreferencesStore } from '../preferences'
 import { rssiToIntensity } from '../rssi'
 import { useMapStore } from '../store'
 import type {
@@ -131,6 +132,8 @@ export default function MapArea() {
     })),
   )
 
+  const distanceUnit = usePreferencesStore((s) => s.units.distance)
+
   const [degraded, setDegraded] = useState<string[]>([])
   const onOverlayStatus = useCallback((label: string, failed: boolean) => {
     setDegraded((prev) => {
@@ -180,6 +183,17 @@ export default function MapArea() {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        {/* The scale bar is the map's distance display, so it reads in the
+            operator's unit ([P3-17]). react-leaflet hands a control's options
+            to Leaflet once at construction, so the unit change has to remount
+            it. It sits bottom-right, above the attribution: bottom-left is
+            where the ground-station form opens. */}
+        <ScaleControl
+          key={distanceUnit}
+          position="bottomright"
+          metric={distanceUnit === 'km'}
+          imperial={distanceUnit === 'mi'}
         />
         <MapOverlay label="Map view" onStatus={onOverlayStatus}>
           <MapViewController view={mapView} />

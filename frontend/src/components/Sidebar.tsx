@@ -3,6 +3,7 @@ import { useMapStore } from '../store'
 import ErrorBoundary from './ErrorBoundary'
 import GroundStationList from './GroundStationList'
 import MissionControl from './MissionControl'
+import UnitPreferences from './UnitPreferences'
 
 export default function Sidebar() {
   const { showUAVOverlay, toggleUAVOverlay, pinningMode, togglePinningMode } =
@@ -66,6 +67,14 @@ export default function Sidebar() {
         )}
         <ErrorBoundary label="Ground stations">
           <GroundStationList />
+        </ErrorBoundary>
+      </div>
+      <div className="border-t border-white/10 p-4">
+        <p className="mb-2 text-xs font-semibold tracking-wide text-slate-300 uppercase">
+          Units
+        </p>
+        <ErrorBoundary label="Unit preferences">
+          <UnitPreferences />
         </ErrorBoundary>
       </div>
     </aside>

@@ -1,8 +1,10 @@
 import L from 'leaflet'
 import { Marker, Popup } from 'react-leaflet'
 import { useShallow } from 'zustand/react/shallow'
+import { usePreferencesStore } from '../preferences'
 import { useMapStore } from '../store'
 import type { ManualGroundStation } from '../types'
+import { formatAltitude } from '../units'
 
 // Ground stations are fixed infrastructure, so they get a mast glyph rather
 // than Leaflet's default teardrop, which the UAV overlay already uses.
@@ -30,12 +32,13 @@ const PENDING_ICON = mastIcon(
 function StationPopup({ station }: { station: ManualGroundStation }) {
   const startEditingStation = useMapStore((s) => s.startEditingStation)
   const removeGroundStation = useMapStore((s) => s.removeGroundStation)
+  const altitudeUnit = usePreferencesStore((s) => s.units.altitude)
 
   return (
     <Popup>
       <strong>{station.name}</strong>
       <br />
-      Alt: {station.altitudeM.toFixed(0)} m
+      Alt: {formatAltitude(station.altitudeM, altitudeUnit)}
       <br />
       {station.latitude.toFixed(5)}, {station.longitude.toFixed(5)}
       <div className="mt-2 flex gap-2">

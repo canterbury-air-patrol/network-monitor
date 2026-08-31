@@ -3,8 +3,10 @@ import type { DivIcon, Icon } from 'leaflet'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import NodeMarkers from '../NodeMarkers'
+import { usePreferencesStore } from '../../preferences'
 import { useMapStore } from '../../store'
 import { LINK_THRESHOLDS } from '../../staleness'
+import { DEFAULT_UNITS } from '../../units'
 
 // react-leaflet needs a live map context; what matters here is which icon and
 // label each node ends up with.
@@ -59,6 +61,7 @@ function addNode(nodeId: number, nodeName: string, captures: number[]) {
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(NOW)
+  usePreferencesStore.setState({ units: DEFAULT_UNITS })
   useMapStore.setState({ nodes: {} })
 })
 
@@ -127,5 +130,20 @@ describe('NodeMarkers', () => {
       'data-icon',
       'node-marker node-marker--lost',
     )
+  })
+
+  it('reports altitude in metres by default', () => {
+    addNode(5, 'UAV-5', [NOW])
+    render(<NodeMarkers />)
+
+    expect(screen.getByTestId('popup')).toHaveTextContent('Alt: 120 m')
+  })
+
+  it("reports altitude in the operator's unit", () => {
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    addNode(6, 'UAV-6', [NOW])
+    render(<NodeMarkers />)
+
+    expect(screen.getByTestId('popup')).toHaveTextContent('Alt: 394 ft')
   })
 })

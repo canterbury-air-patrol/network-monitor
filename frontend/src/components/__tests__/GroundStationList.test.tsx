@@ -2,10 +2,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import GroundStationList from '../GroundStationList'
+import { usePreferencesStore } from '../../preferences'
 import { useMapStore } from '../../store'
+import { DEFAULT_UNITS } from '../../units'
 
 beforeEach(() => {
   localStorage.clear()
+  usePreferencesStore.setState({ units: DEFAULT_UNITS })
   useMapStore.setState({
     manualGroundStations: {},
     pinningMode: false,
@@ -54,5 +57,15 @@ describe('GroundStationList', () => {
 
     expect(useMapStore.getState().manualGroundStations).toEqual({})
     expect(screen.getByTestId('no-stations')).toBeInTheDocument()
+  })
+
+  it("reads altitude in the operator's unit", () => {
+    usePreferencesStore.getState().setAltitudeUnit('ft')
+    useMapStore.getState().addGroundStation('Alpha', -43.5, 172.5, 320)
+    render(<GroundStationList />)
+
+    expect(
+      screen.getByText('1050 ft \u00b7 -43.5000, 172.5000', { exact: false }),
+    ).toBeInTheDocument()
   })
 })
