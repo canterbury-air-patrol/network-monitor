@@ -140,6 +140,13 @@ class Command(BaseCommand):
     # --- option handling --------------------------------------------------
 
     def _validate(self, options) -> None:
+        # ``float("nan")`` compares false against every bound below, so a
+        # non-finite value would slip through and then quietly misbehave: a nan
+        # rate publishes flat out, a nan threshold never trips.
+        for name in ("rate", "grace", "connect_timeout", "max_drop_rate", "max_p95_ms"):
+            value = options[name]
+            if value is not None and not math.isfinite(value):
+                raise CommandError(f"--{name.replace('_', '-')} must be a finite number")
         if options["clients"] < 1:
             raise CommandError("--clients must be at least 1")
         if options["messages"] < 1:
@@ -189,9 +196,12 @@ class Command(BaseCommand):
             published, publish_errors, publish_s = await self._publish(layer, sent_at, groups, options)
             await self._drain(clients, receivers, options["grace"])
             # The idle grace period is not part of the run: time it to the last
-            # message that actually arrived.
+            # message that actually arrived. It can never be shorter than the
+            # publisher took, though — a run that drops its tail stops
+            # receiving long before ``group_send`` stops being called, and
+            # billing only the delivered window would inflate the rate.
             last_arrival = max((client.last_arrival_s for client in clients), default=0.0)
-            run_s = last_arrival - started if last_arrival else publish_s
+            run_s = max(last_arrival - started, publish_s) if last_arrival else publish_s
         finally:
             for task in receivers:
                 task.cancel()
@@ -309,15 +319,20 @@ class Command(BaseCommand):
         the publisher stops, and cutting that short would report a backlog as a
         drop.
         """
+        # An idle window shorter than one poll is not something the loop can
+        # observe, and a zero window would cancel the receivers before they had
+        # run at all, reporting a queue that was merely still in flight as a
+        # drop. One poll is the floor.
+        window = max(grace, _DRAIN_POLL_S)
         pending = set(receivers)
         delivered = -1
-        deadline = time.monotonic() + grace
+        deadline = time.monotonic() + window
         while pending and time.monotonic() < deadline:
             _, pending = await asyncio.wait(pending, timeout=_DRAIN_POLL_S)
             total = sum(client.received for client in clients)
             if total != delivered:
                 delivered = total
-                deadline = time.monotonic() + grace
+                deadline = time.monotonic() + window
 
     async def _disconnect_all(self, clients: list[_Client]) -> None:
         await asyncio.gather(*(client.communicator.disconnect() for client in clients), return_exceptions=True)
