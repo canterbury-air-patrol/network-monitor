@@ -67,6 +67,34 @@ of the flight, which is how coverage gaps are staged. Runs are reproducible via
 `seed`; missing `Node`, `Radio` and `GroundStation` rows are created on the fly
 unless `--no-bootstrap` is given.
 
+## 🧪 WebSocket Stress Test
+Opens concurrent WebSocket connections (50 by default) against the real ASGI
+application and broadcasts telemetry through the configured channel layer,
+reporting end-to-end latency and drop rate — the numbers that decide how many
+operators a deployment can carry before the map starts skipping updates.
+
+```bash
+# Default sweep: 50 clients on the global broadcast group
+docker compose exec app ./manage.py stress_websockets
+
+# Fan out over per-node groups, 200 clients, machine-readable output
+docker compose exec app ./manage.py stress_websockets \
+    --clients 200 --nodes 20 --messages 500 --rate 50 --json
+
+# Use as a gate: non-zero exit if the layer regresses
+docker compose exec app ./manage.py stress_websockets --max-drop-rate 0 --max-p95-ms 250
+```
+
+The connections are driven in-process, so routing, origin validation and
+`NodeStatusConsumer` all run as they do in production while the timings stay
+free of TCP and HTTP framing noise: what is being measured is the channel
+layer, and with `channels_redis` every broadcast makes a real Redis round trip.
+Messages are counted per client, so a broadcast a saturated channel silently
+discards — `channels_redis` drops for any channel over its capacity — shows up
+as a drop rate rather than as an unexplained gap on the map. `--rate 0`
+publishes flat out, which is how the layer's ceiling is found; `--grace` sets
+how long a quiet tail must be before undelivered messages are written off.
+
 ## 📡 Stale Node Display
 A node that stops reporting is shown on the map by how long it has been
 silent, measured on the device's `captured_at` timestamps so a buffered
