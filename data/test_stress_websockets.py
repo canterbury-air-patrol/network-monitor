@@ -1,5 +1,6 @@
 """Tests for the WebSocket stress harness [P12-03]."""
 
+import asyncio
 import json
 from io import StringIO
 
@@ -89,6 +90,41 @@ def test_run_timing_covers_the_drain_not_the_idle_grace():
     assert report["delivery_rate_per_s"] > 0
 
 
+def test_zero_grace_still_counts_the_messages_in_flight():
+    report = run_json(clients=2, messages=4, rate=0, grace=0)
+
+    # Asking for no idle wait must not cancel the receivers before they have
+    # had a turn: messages still queued on the communicators are in flight,
+    # not dropped.
+    assert report["received"] == report["expected_deliveries"] == 8
+    assert report["drop_rate_percent"] == 0.0
+
+
+def test_run_timing_never_undercuts_a_slow_publisher(monkeypatch):
+    """A send that outlives the last delivery must not shrink the run."""
+    from channels.layers import InMemoryChannelLayer
+
+    original = InMemoryChannelLayer.group_send
+    sent = 0
+
+    async def slow_last_send(self, group, message):
+        nonlocal sent
+        await original(self, group, message)
+        sent += 1
+        if sent == 3:
+            # The layer is still working after every message has landed; the
+            # window that gets billed has to cover it, or the delivery rate is
+            # reported against a run shorter than the publisher itself.
+            await asyncio.sleep(0.3)
+
+    monkeypatch.setattr(InMemoryChannelLayer, "group_send", slow_last_send)
+    report = run_json(clients=1, messages=3, rate=0)
+
+    assert report["publish_seconds"] >= 0.3
+    assert report["run_seconds"] >= report["publish_seconds"]
+    assert report["delivery_rate_per_s"] <= 3 / 0.3
+
+
 def test_rate_limiting_paces_the_publisher():
     report = run_json(clients=1, messages=4, rate=20)
 
@@ -124,6 +160,12 @@ def test_drop_rate_threshold_passes_a_clean_run():
         ({"payload_bytes": -1}, "--payload-bytes cannot be negative"),
         ({"grace": -1}, "--grace cannot be negative"),
         ({"connect_timeout": 0}, "--connect-timeout must be greater than zero"),
+        ({"rate": float("nan")}, "--rate must be a finite number"),
+        ({"rate": float("inf")}, "--rate must be a finite number"),
+        ({"grace": float("nan")}, "--grace must be a finite number"),
+        ({"connect_timeout": float("nan")}, "--connect-timeout must be a finite number"),
+        ({"max_drop_rate": float("nan")}, "--max-drop-rate must be a finite number"),
+        ({"max_p95_ms": float("nan")}, "--max-p95-ms must be a finite number"),
     ],
 )
 def test_rejects_nonsensical_options(options, message):
