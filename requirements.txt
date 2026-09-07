@@ -1,4 +1,4 @@
-Django==6.1
+Django==6.1.1
 python-json-logger
 sentry-sdk[django]
 celery[redis]
