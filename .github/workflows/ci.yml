@@ -57,24 +57,42 @@ jobs:
 
   frontend-e2e:
     runs-on: ubuntu-latest
+    # The visual regression baselines ([P12-02]) are pixel comparisons against
+    # images committed to the repository, so the suite runs in the same image
+    # that rendered them — the browser build and the fonts are both part of
+    # what a screenshot is. `run-e2e.sh` runs it locally in this same image.
+    container: mcr.microsoft.com/playwright:v1.62.1-noble
+    env:
+      # What tells the suite it is in the environment the baselines belong to
+      PLAYWRIGHT_VISUAL: '1'
+      # Kept beside the container tag above so the check below can compare them
+      PLAYWRIGHT_VERSION: '1.62.1'
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '26'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
-      - run: npx playwright install --with-deps chromium
+      - name: Check the runner image matches the pinned Playwright
         working-directory: frontend
+        run: |
+          pinned=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          if [ "$pinned" != "$PLAYWRIGHT_VERSION" ]; then
+            echo "@playwright/test $pinned is pinned, but this job runs" >&2
+            echo "mcr.microsoft.com/playwright:v$PLAYWRIGHT_VERSION." >&2
+            echo "Update the container tag in this workflow, then re-take the" >&2
+            echo "baselines: ./run-e2e.sh --project=visual --update-snapshots" >&2
+            exit 1
+          fi
       - run: npm run test:e2e
         working-directory: frontend
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
-          path: frontend/playwright-report/
+          # test-results carries the actual/diff images for a failed baseline,
+          # which is the only way to see what moved from a CI log
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
           retention-days: 7
 
   npm-audit:
