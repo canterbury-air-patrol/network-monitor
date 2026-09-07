@@ -39,7 +39,7 @@ This project adheres to strict engineering mandates defined in [AGENTS.md](./AGE
 1.  **Initialize Environment:** `cp networkmonitor/local_settings.py.template networkmonitor/local_settings.py`
 2.  **Start Services:** `docker-compose up -d`
 3.  **Build Frontend:** `./build-frontend.sh`
-4.  **Run Tests:** `docker-compose run --rm test` (Backend) | `./build-frontend.sh` (Frontend)
+4.  **Run Tests:** `docker-compose run --rm test` (Backend) | `./check-code.sh` (lint, types, unit tests) | `./run-e2e.sh` (Playwright E2E)
 
 ## 🛰 Flight Path Simulator
 Generates a synthetic UAV flight — snapshots plus per radio/band/ground-station
@@ -94,6 +94,36 @@ discards — `channels_redis` drops for any channel over its capacity — shows 
 as a drop rate rather than as an unexplained gap on the map. `--rate 0`
 publishes flat out, which is how the layer's ceiling is found; `--grace` sets
 how long a quiet tail must be before undelivered messages are written off.
+
+## 🖼 End-to-End & Visual Regression Tests
+The Playwright suite drives the built UI against a stubbed backend and a mocked
+telemetry socket, so it needs no running services. `run-e2e.sh` executes it in
+the `mcr.microsoft.com/playwright` image matching the pinned `@playwright/test`
+version — the frontend's own Node image ships no browsers:
+
+```bash
+./run-e2e.sh                                   # the whole suite
+./run-e2e.sh --project=visual                  # visual regression only
+./run-e2e.sh uav-markers.spec.ts               # one spec
+./run-e2e.sh --project=visual --update-snapshots   # re-take the baselines
+```
+
+The `visual` project photographs the screen states an operator works from —
+the loaded map, the coverage heatmap, live and lost UAV markers, the station
+form and roster, the signal history panel, the imperial unit selection and the
+degraded-overlay and crashed-panel notices — and compares them against
+baselines committed in [`frontend/e2e/__screenshots__/`](./frontend/e2e/__screenshots__).
+A screenshot only reproduces in the environment that rendered it, so these
+tests run **only** inside that pinned image, which is what sets
+`PLAYWRIGHT_VISUAL=1`; anywhere else they skip with a note rather than
+reporting failures about the host's fonts. CI runs the same image, and a
+Playwright upgrade fails the job until the workflow's container tag is moved
+and the baselines re-taken.
+
+When a baseline fails, the report and the actual/diff images are uploaded as
+the `playwright-report` artifact. Review the diff: if the change is intended,
+re-take the baselines with the command above and commit the new images with
+the change that caused them.
 
 ## 📡 Stale Node Display
 A node that stops reporting is shown on the map by how long it has been
