@@ -23,21 +23,18 @@ import datetime
 import json
 import pathlib
 import random
-import sys
 import time
-import urllib.error
-import urllib.request
 
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from data.models import GroundStation, Node, NodeSnapshot, Radio, RadioReading
+from data.models import GroundStation, Node, Radio
 from data.simulation import Scenario, ScenarioError, simulate, snapshot_to_payload
+from data.telemetry_transport import DEFAULT_INGEST_URL, TRANSPORT_CHOICES, TransportError, build_transport
 
 DEMO_SCENARIO = pathlib.Path(__file__).resolve().parents[2] / "scenarios" / "demo_flight.json"
-DEFAULT_INGEST_URL = "http://localhost:8050/api/v1/telemetry/ingest/"
 
 
 class Command(BaseCommand):
@@ -51,7 +48,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--transport",
-            choices=["orm", "http", "stdout"],
+            choices=list(TRANSPORT_CHOICES),
             default="orm",
             help="Where to send snapshots: straight to the database, to the ingest API, or to stdout.",
         )
@@ -94,7 +91,7 @@ class Command(BaseCommand):
         if options["speed_factor"] <= 0:
             raise CommandError("--speed-factor must be greater than zero")
 
-        transport = options["transport"]
+        transport = build_transport(options["transport"], url=options["url"], token=options["token"])
         # Every transport speaks primary keys (the ingest API accepts nothing
         # else), so the scenario's rows are resolved — and optionally created —
         # up front regardless of where the snapshots are sent.
@@ -105,7 +102,7 @@ class Command(BaseCommand):
         snapshots = simulate(scenario, start_time=start_time, loops=options["loops"], rng=rng)
 
         interval = scenario.sample_interval_s / options["speed_factor"]
-        batch: list[tuple] = []
+        batch: list[dict] = []
         sent = 0
         readings = 0
         next_due = time.monotonic()
@@ -115,16 +112,18 @@ class Command(BaseCommand):
                 if delay > 0:
                     time.sleep(delay)
                 next_due += interval
-            batch.append((snapshot, snapshot_to_payload(snapshot, ids.node, ids.radios, ids.stations)))
+            batch.append(snapshot_to_payload(snapshot, ids.node, ids.radios, ids.stations))
             readings += len(snapshot.readings)
             if len(batch) >= options["batch_size"]:
-                sent += self._flush(batch, transport, options)
+                sent += self._send(transport, batch)
                 batch = []
         if batch:
-            sent += self._flush(batch, transport, options)
+            sent += self._send(transport, batch)
 
         self.stdout.write(
-            self.style.SUCCESS(f"{scenario.name}: sent {sent} snapshot(s) with {readings} reading(s) via {transport}")
+            self.style.SUCCESS(
+                f"{scenario.name}: sent {sent} snapshot(s) with {readings} reading(s) via {options['transport']}"
+            )
         )
 
     # --- scenario loading -------------------------------------------------
@@ -204,61 +203,11 @@ class Command(BaseCommand):
 
     # --- transports -------------------------------------------------------
 
-    def _flush(self, batch: list[tuple], transport: str, options) -> int:
-        if transport == "orm":
-            return self._write_orm(batch)
-        if transport == "http":
-            return self._post_http([payload for _, payload in batch], options)
-        for _, payload in batch:
-            json.dump(payload, sys.stdout)
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-        return len(batch)
-
-    @transaction.atomic
-    def _write_orm(self, batch: list[tuple]) -> int:
-        readings = []
-        for snapshot, payload in batch:
-            row = NodeSnapshot.objects.create(
-                node_id=payload["node"],
-                captured_at=snapshot.captured_at,
-                position=Point(
-                    snapshot.position.longitude,
-                    snapshot.position.latitude,
-                    snapshot.position.altitude,
-                    srid=4326,
-                ),
-            )
-            readings.extend(
-                RadioReading(
-                    snapshot=row,
-                    radio_id=reading["radio"],
-                    ground_station_id=reading["ground_station"],
-                    band=reading["band"],
-                    rssi_dbm=reading["rssi_dbm"],
-                    snr_db=reading["snr_db"],
-                )
-                for reading in payload["radio_readings"]
-            )
-        RadioReading.objects.bulk_create(readings)
-        return len(batch)
-
-    def _post_http(self, payloads: list[dict], options) -> int:
-        body = json.dumps(payloads).encode()
-        request = urllib.request.Request(
-            options["url"], data=body, method="POST", headers={"Content-Type": "application/json"}
-        )
-        if options["token"]:
-            request.add_header("Authorization", f"Bearer {options['token']}")
+    def _send(self, transport, batch: list[dict]) -> int:
         try:
-            with urllib.request.urlopen(request) as response:
-                response.read()
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode(errors="replace")
-            raise CommandError(f"Ingest returned HTTP {exc.code}: {detail}") from exc
-        except urllib.error.URLError as exc:
-            raise CommandError(f"Cannot reach ingest endpoint {options['url']}: {exc.reason}") from exc
-        return len(payloads)
+            return transport.send(batch)
+        except TransportError as exc:
+            raise CommandError(str(exc)) from exc
 
 
 @dataclasses.dataclass
