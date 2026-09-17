@@ -334,7 +334,7 @@ def test_command_http_transport_posts_batches(scenario_file, monkeypatch):
         posted.append((request.full_url, json.loads(request.data)))
         return FakeResponse()
 
-    monkeypatch.setattr("data.management.commands.simulate_flight.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("data.telemetry_transport.urllib.request.urlopen", fake_urlopen)
     call_command("simulate_flight", scenario=scenario_file, transport="http", batch_size=5, url="http://app/ingest/")
 
     assert posted
@@ -350,7 +350,7 @@ def test_command_http_transport_reports_ingest_errors(scenario_file, monkeypatch
     def fake_urlopen(request, *args, **kwargs):
         raise urllib.error.URLError("connection refused")
 
-    monkeypatch.setattr("data.management.commands.simulate_flight.urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("data.telemetry_transport.urllib.request.urlopen", fake_urlopen)
     with pytest.raises(CommandError, match="Cannot reach ingest endpoint"):
         call_command("simulate_flight", scenario=scenario_file, transport="http")
 
