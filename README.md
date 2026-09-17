@@ -67,6 +67,52 @@ of the flight, which is how coverage gaps are staged. Runs are reproducible via
 `seed`; missing `Node`, `Radio` and `GroundStation` rows are created on the fly
 unless `--no-bootstrap` is given.
 
+## 🔁 Telemetry Capture & Replay
+Records telemetry that has already arrived and plays it back somewhere else, so
+a fault seen in the field can be reproduced at a desk. Nothing is generated and
+nothing is random: a session is a literal recording, and replaying the same file
+twice drives the system with identical input.
+
+```bash
+# Capture a window from where the fault happened
+docker compose exec app ./manage.py capture_telemetry \
+    --since 2026-09-17T09:00:00+12:00 --node uav-01 --output session.json
+
+# Or capture everything a mission's phases covered
+docker compose exec app ./manage.py capture_telemetry --mission 4 --output mission-4.json
+
+# Look at a session without touching the database
+docker compose exec app ./manage.py replay_telemetry session.json --dry-run
+
+# Replay it into the local database, then through the ingest API at recorded pace
+docker compose exec app ./manage.py replay_telemetry session.json
+docker compose exec app ./manage.py replay_telemetry session.json --transport http --realtime
+
+# Narrow to the 90 seconds around the fault and run them ten times faster
+docker compose exec app ./manage.py replay_telemetry session.json \
+    --from-offset 240 --to-offset 330 --realtime --speed-factor 10
+```
+
+A session document names its nodes, radios and ground stations rather than
+numbering them: the database a session was captured from is rarely the one it is
+replayed into, and missing rows are recreated on arrival unless `--no-bootstrap`
+is given. Snapshots carry an `offset_s` from the start of the recording, so the
+gaps between reports — often the bug itself — survive being replayed at another
+hour, in another timezone, or at another speed. By default the session is
+rebased to end at `now`, which keeps it inside the ingest API's freshness
+window; `--start-time` pins the first snapshot instead, and
+`--preserve-timestamps` sends the original capture times, which only
+`--transport orm` will accept for an old recording. `--speed-factor` compresses
+the replayed capture times along with the pacing, so a session played back ten
+times faster still arrives at wall-clock pace rather than marching into a future
+the ingest API rejects.
+
+`capture_telemetry` writes the document to stdout unless `--output` names a
+file, with its summary on stderr, so `… capture_telemetry > session.json` is
+safe. It refuses to write a session the replay tool could not load, and the
+window it captures carries every radio of every node involved — including a
+relay whose own snapshots fall outside it.
+
 ## 🧪 WebSocket Stress Test
 Opens concurrent WebSocket connections (50 by default) against the real ASGI
 application and broadcasts telemetry through the configured channel layer,

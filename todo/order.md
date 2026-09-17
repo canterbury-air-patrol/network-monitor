@@ -4,27 +4,26 @@ A tiered priority list derived from the dependency markers in `00-research.md` a
 
 Tasks already complete are not repeated here — see the checkboxes in each phase file for live state.
 
-**Cleared since the last revision:** `[P12-02]` Playwright visual regression — eleven baselines committed under `frontend/e2e/__screenshots__/`, rendered and enforced in the pinned Playwright image that `run-e2e.sh` and CI both run. Phase 3 remains complete, so the Phase 6, Phase 9, `[P13-01]` and `[P13-04]` gates are still clear.
+**Cleared since the last revision:** `[P12-05]` telemetry replay — `capture_telemetry` exports a window of recorded telemetry as a name-keyed session document and `replay_telemetry` plays it back into any database, sharing the ingest transports with the `[P3-15]` simulator. Phase 3 remains complete, so the Phase 6, Phase 9, `[P13-01]` and `[P13-04]` gates are still clear.
 
 ## Tier 1 — Remaining test infrastructure (no unmet dependencies)
 
-1. `[P12-05]` Telemetry replay tool *(pairs with the `[P3-15]` simulator and the `[P12-03]` stress harness)*
-2. `[P12-04]` `tc netem` jitter simulation in the dev environment *(blocks the `[P13-06]` field-testing entry)*
+1. `[P12-04]` `tc netem` jitter simulation in the dev environment *(blocks the `[P13-06]` field-testing entry)*
 
 ## Tier 2 — Authentication (Phase 4)
 Nothing in Phase 3 is holding this back any more, so this is the critical path: `[P4-09]` is the enforcement gate that unlocks Phase 5, and `[P4-05]` unlocks Phase 14. Start here if only one thread is available.
 
-3. `[P4-01]` `djangorestframework-simplejwt`
-4. `[P4-02]` Login/logout API, `IsAuthenticated` on writes
-5. `[P4-03]` Frontend login + in-memory token management
-6. `[P4-04]` Auth-flow integration tests
-7. `[P4-10]` JWT validation in WebSocket consumer
-8. `[P4-11]` WS auth tests
-9. `[P4-05]` Device model + API key, per the `[R-03]` decision *(unblocks Phase 14)*
-10. `[P4-06]` Device auth middleware
-11. `[P4-07]` Device registration + key rotation UI in admin
-12. `[P4-08]` Device auth tests
-13. `[P4-09]` **Enforcement gate** — `IsAuthenticated` on all remaining endpoints
+2. `[P4-01]` `djangorestframework-simplejwt`
+3. `[P4-02]` Login/logout API, `IsAuthenticated` on writes
+4. `[P4-03]` Frontend login + in-memory token management
+5. `[P4-04]` Auth-flow integration tests
+6. `[P4-10]` JWT validation in WebSocket consumer
+7. `[P4-11]` WS auth tests
+8. `[P4-05]` Device model + API key, per the `[R-03]` decision *(unblocks Phase 14)*
+9. `[P4-06]` Device auth middleware
+10. `[P4-07]` Device registration + key rotation UI in admin
+11. `[P4-08]` Device auth tests
+12. `[P4-09]` **Enforcement gate** — `IsAuthenticated` on all remaining endpoints
 
 Once `[P4-03]` lands, revisit `[P3-17]`: the browser-local unit store was built with a `setUnits` seam so a login can write the account's preference through it.
 
