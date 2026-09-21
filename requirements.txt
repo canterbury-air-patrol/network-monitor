@@ -2,7 +2,7 @@ Django==6.1.1
 python-json-logger
 sentry-sdk[django]
 celery[redis]
-psycopg[binary,pool]==3.3.5
+psycopg[binary,pool]==3.3.6
 django-leaflet==0.34.0
 djangorestframework==3.18.1
 django-cors-headers==4.9.0
