@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 
 // Node 26 defines a `localStorage` global that stays undefined unless
 // --localstorage-file is passed, and it shadows the jsdom implementation.
