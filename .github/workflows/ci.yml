@@ -61,12 +61,12 @@ jobs:
     # images committed to the repository, so the suite runs in the same image
     # that rendered them — the browser build and the fonts are both part of
     # what a screenshot is. `run-e2e.sh` runs it locally in this same image.
-    container: mcr.microsoft.com/playwright:v1.62.1-noble
+    container: mcr.microsoft.com/playwright:v1.64.1-noble
     env:
       # What tells the suite it is in the environment the baselines belong to
       PLAYWRIGHT_VISUAL: '1'
       # Kept beside the container tag above so the check below can compare them
-      PLAYWRIGHT_VERSION: '1.62.1'
+      PLAYWRIGHT_VERSION: '1.64.1'
     steps:
       - uses: actions/checkout@v7
       - run: npm ci
